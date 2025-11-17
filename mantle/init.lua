@@ -12,6 +12,7 @@ local button_logic = require("mantle.widgets.button")
 local checkbox_logic = require("mantle.widgets.checkbox")
 local slider_logic = require("mantle.widgets.slider")
 local panel_logic = require("mantle.widgets.panel")
+local input_logic = require("mantle.widgets.input")
 
 -- Internal Configuration
 local config = {
@@ -168,6 +169,17 @@ function Mantle.Panel(x, y, width, height, color)
     local finalX, finalY = resolvePos(x, y)
     panel_logic(Mantle, finalX, finalY, width, height, color)
     Layout.Advance(width, height)
+end
+
+function Mantle.Input(text, placeholder, x, y, w)
+    local finalX, finalY = resolvePos(x, y)
+    local width = w or 200
+    local height = 40
+
+    local newText = input_logic(Mantle, text, placeholder, finalX, finalY, width)
+    Layout.Advance(width, height)
+
+    return newText
 end
 
 -- ============================
