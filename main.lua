@@ -1,25 +1,35 @@
-local Mantle = require("mantle.init") -- Loads your framework
+-- main.lua
+local Mantle = require("mantle.init")
+local rl = rl
 
-rl.InitWindow(800, 600, "Mantle UI Demo")
+rl.InitWindow(800, 600, "Mantle Demo")
 rl.SetTargetFPS(60)
 
-while not rl.WindowShouldClose() do
-    -- FRAMEWORK START
-    Mantle.Begin()
+-- === APP STATE ===
+-- You hold the data here!
+local showDebug = false
+local enableSound = true
 
+while not rl.WindowShouldClose() do
+    Mantle.Begin()
     rl.BeginDrawing()
     rl.ClearBackground(rl.RAYWHITE)
 
-    rl.DrawText("Welcome to Mantle", 50, 50, 30, rl.DARKGRAY)
+    rl.DrawText("Mantle Control Panel", 50, 50, 30, rl.DARKGRAY)
 
-    if Mantle.Button("Click Me", 50, 100) then
-        print("Button was clicked!")
-        -- You could change a variable here, e.g., open a menu
+    -- === THE CHECKBOXES ===
+    -- Syntax: variable = Widget(Text, variable, x, y)
+
+    showDebug = Mantle.Checkbox("Show Debug Info", showDebug, 50, 120)
+
+    enableSound = Mantle.Checkbox("Enable Sound", enableSound, 50, 160)
+
+    -- Logic based on the checkbox
+    if showDebug then
+        rl.DrawText("Debug Mode: ON", 50, 300, 20, rl.RED)
     end
 
     rl.EndDrawing()
-
-    -- FRAMEWORK END
     Mantle.End()
 end
 

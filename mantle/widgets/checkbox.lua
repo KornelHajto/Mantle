@@ -14,6 +14,10 @@ return function(Mantle, text, checked, x, y)
     local isHovered = (mouseX >= x and mouseX <= x + totalWidth
         and mouseY >= y and mouseY <= y + size)
 
+    if isHovered and rl.IsMouseButtonReleased(0) then
+        checked = not checked
+    end
+
     rl.DrawRectangleLines(x, y, size, size, Mantle.Theme.colors.accent)
     if checked then
         local margin = 4
