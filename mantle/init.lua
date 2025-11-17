@@ -7,6 +7,9 @@ Mantle.Theme = require("mantle.theme")
 
 local button_logic = require("mantle.widgets.button")
 local checkbox_logic = require("mantle.widgets.checkbox")
+local slider_logic = require("mantle.widgets.slider")
+local panel_logic = require("mantle.widgets.panel")
+local Core = require("mantle.core")
 
 function Mantle.Begin()
     -- Any global frame setup
@@ -23,5 +26,20 @@ end
 function Mantle.Checkbox(text, checked, x, y)
     return checkbox_logic(Mantle, text, checked, x, y)
 end
+
+function Mantle.Slider(value, x, y, width)
+    return slider_logic(Mantle, value, x, y, width)
+end
+
+function Mantle.Panel(x, y, width, height, color)
+    return panel_logic(Mantle, x, y, width, height, color)
+end
+
+-- Helper functions from Core
+Mantle.DrawFooter = Core.DrawFooter
+Mantle.DrawDashedLine = Core.DrawDashedLine
+Mantle.DrawWave = Core.DrawWave
+Mantle.DrawIcon = Core.DrawIcon
+Mantle.HandleDrag = Core.HandleDrag
 
 return Mantle
