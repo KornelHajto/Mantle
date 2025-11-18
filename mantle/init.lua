@@ -182,9 +182,14 @@ function Mantle.Slider(value, x, y, width)
     return result
 end
 
-function Mantle.Panel(x, y, width, height, color)
+function Mantle.Panel(x, y, width, height, color, contentFunc)
     local finalX, finalY = resolvePos(x, y)
     panel_logic(Mantle, finalX, finalY, width, height, color)
+
+    if contentFunc then
+        Mantle.Column(x + 10, y + 10, 10, contentFunc)
+    end
+
     Layout.Advance(width, height)
 end
 
