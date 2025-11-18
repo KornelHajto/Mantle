@@ -37,10 +37,8 @@ Run the application from your repository root using the appropriate starter scri
 # Windows
 .\start.bat
 
-# Linux/macOS
-chmod +x ./start.sh
-./start.sh
 ```
+Currently no unix version.
 
 ---
 
@@ -181,7 +179,6 @@ Mantle/
 │   ├── layout.lua        # Layout engine (Row/Column)
 │   ├── theme.lua         # Theme configuration
 │   ├── assets.lua        # Asset loading and caching
-│   ├── network.lua       # HTTP/API utilities
 │   └── widgets/
 │       ├── button.lua
 │       ├── checkbox.lua
@@ -190,11 +187,12 @@ Mantle/
 │       ├── dropdown.lua
 │       ├── scroll.lua
 │       └── panel.lua
-├── assets/
-│   └── roboto.ttf        # Font files
+├── demo/
+│   └── assets/
+|      └── font & images/       # Fonts and images
+│   └── demos
 ├── main.lua              # Your application entry point
-├── start.bat             # Windows launcher
-└── start.sh              # Linux/macOS launcher
+└── start.bat              # Windows start script
 ```
 
 ---
@@ -216,20 +214,6 @@ Mantle.Run(function()
     Mantle.Text("Count: " .. counter, 20, {255, 255, 255})
 end)
 ```
-
-### Network Requests
-
-Use the built-in `network.lua` module for simple HTTP requests:
-
-```lua
-local Network = require("mantle.network")
-
-local weather = Network.GetWeather(nil, "your_api_key")
-if weather then
-    Mantle.Text("Temp: " .. weather.temp, 20, {255, 255, 255})
-end
-```
-
 ### Custom Widgets
 
 Create your own widgets by following the pattern:
