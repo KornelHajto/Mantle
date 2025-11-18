@@ -201,49 +201,51 @@ end
 -- WIDGETS
 -- ============================
 
-function Mantle.Button(text, x, y, w, h)
+function Mantle.Button(text, x, y, w, h, style)
     w = w or 120
     h = h or 40
     local finalX, finalY = resolvePos(x, y)
-    local result = button_logic(Mantle, text, finalX, finalY, w, h)
+    local result = button_logic(Mantle, text, finalX, finalY, w, h, style)
     Layout.Advance(w, h)
     return result
 end
 
-function Mantle.Checkbox(text, checked, x, y)
+function Mantle.Checkbox(text, checked, x, y, style)
     local font = Mantle.Theme.font or rl.GetFontDefault()
     local w = 20 + 8 + rl.MeasureTextEx(font, text, Mantle.Theme.fontSize, 1).x
     local h = 20
     local finalX, finalY = resolvePos(x, y)
-    local result = checkbox_logic(Mantle, text, checked, finalX, finalY)
+    local result = checkbox_logic(Mantle, text, checked, finalX, finalY, style)
     Layout.Advance(w, h)
     return result
 end
 
-function Mantle.Slider(value, x, y, width)
+function Mantle.Slider(value, x, y, width, style)
     local w = width or 150
     local h = 20
     local finalX, finalY = resolvePos(x, y)
-    local result = slider_logic(Mantle, value, finalX, finalY, w)
+    local result = slider_logic(Mantle, value, finalX, finalY, w, style)
     Layout.Advance(w, h)
     return result
 end
 
-function Mantle.Panel(a1, a2, a3, a4, a5, a6)
-    local x, y, w, h, color, contentFunc
+function Mantle.Panel(a1, a2, a3, a4, a5, a6, a7)
+    local x, y, w, h, color, contentFunc, style
 
     if type(a3) == "number" then
         x, y, w, h = a1, a2, a3, a4
         color = a5
         contentFunc = a6
+        style = a7
     else
         w, h = a1, a2
         color = a3
         contentFunc = a4
+        style = a5
         x, y = resolvePos(nil, nil)
     end
 
-    panel_logic(Mantle, x, y, w, h, color)
+    panel_logic(Mantle, x, y, w, h, color, style)
 
     -- === UPDATE: Pass Inner Bounds to Layout ===
     if contentFunc then
@@ -258,11 +260,11 @@ function Mantle.Panel(a1, a2, a3, a4, a5, a6)
     Layout.Advance(w, h)
 end
 
-function Mantle.Input(text, placeholder, x, y, w)
+function Mantle.Input(text, placeholder, x, y, w, style)
     local finalX, finalY = resolvePos(x, y)
     local width = w or 200
     local height = 40
-    local newText = input_logic(Mantle, text, placeholder, finalX, finalY, width)
+    local newText = input_logic(Mantle, text, placeholder, finalX, finalY, width, style)
     Layout.Advance(width, height)
     return newText
 end
@@ -292,5 +294,6 @@ Mantle.DrawFooter = Core.DrawFooter
 Mantle.DrawDashedLine = Core.DrawDashedLine
 Mantle.DrawWave = Core.DrawWave
 Mantle.DrawIcon = Core.DrawIcon
+Mantle.DrawRectStyle = Core.DrawRectStyle
 
 return Mantle

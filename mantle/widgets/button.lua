@@ -1,8 +1,31 @@
 local rl = rl
 
-return function(Mantle, text, x, y, width, height)
+-- Merge local style with theme defaults
+local function resolveStyle(Mantle, style)
+    local theme = Mantle.Theme
+    local defaults = (theme.styles and theme.styles.Button) or {}
+
+    local function pick(key, fallback)
+        if style and style[key] ~= nil then return style[key] end
+        if defaults[key] ~= nil then return defaults[key] end
+        return fallback
+    end
+
+    return {
+        borderRadius    = pick("borderRadius", 0),
+        backgroundColor = pick("backgroundColor", theme.colors.primary),
+        textColor       = pick("textColor", theme.colors.text),
+        borderColor     = pick("borderColor", theme.colors.accent),
+        hoverColor      = pick("hoverColor", theme.colors.highlight),
+        activeColor     = pick("activeColor", theme.colors.accent)
+    }
+end
+
+return function(Mantle, text, x, y, width, height, style)
     width = width or 120
     height = height or 40
+
+    local s = resolveStyle(Mantle, style)
 
     local mouseX = rl.GetMouseX()
     local mouseY = rl.GetMouseY()
@@ -15,18 +38,29 @@ return function(Mantle, text, x, y, width, height)
         (mouseX >= x and mouseX <= x + width and
             mouseY >= y and mouseY <= y + height)
 
-    local color = Mantle.Theme.colors.primary
+    local color = s.backgroundColor
 
     if isHovered then
         if isDown then
-            color = Mantle.Theme.colors.accent
+            color = s.activeColor
         else
-            color = Mantle.Theme.colors.highlight
+            color = s.hoverColor
         end
     end
 
-    rl.DrawRectangle(x, y, width, height, color)
-    rl.DrawRectangleLines(x, y, width, height, Mantle.Theme.colors.accent)
+    local rect = { x = x, y = y, width = width, height = height }
+
+    if s.borderRadius > 0 then
+        rl.DrawRectangleRounded(rect, s.borderRadius, 12, color)
+        if s.borderColor then
+            rl.DrawRectangleRoundedLines(rect, s.borderRadius, 12, 1, s.borderColor)
+        end
+    else
+        rl.DrawRectangle(x, y, width, height, color)
+        if s.borderColor then
+            rl.DrawRectangleLines(x, y, width, height, s.borderColor)
+        end
+    end
 
     local font = Mantle.Theme.font or rl.GetFontDefault()
     local fontSize = Mantle.Theme.fontSize
@@ -43,7 +77,7 @@ return function(Mantle, text, x, y, width, height)
         { x = math.floor(txtX), y = math.floor(txtY) },
         fontSize,
         spacing,
-        Mantle.Theme.colors.text
+        s.textColor
     )
 
     return isHovered and isReleased

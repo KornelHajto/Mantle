@@ -5,10 +5,25 @@ local activeState = {
     backspaceTimer = 0.0
 }
 
-return function(Mantle, text, placeholder, x, y, width)
+return function(Mantle, text, placeholder, x, y, width, style)
     width = width or 200
     local height = 40
     text = text or ""
+
+    local theme = Mantle.Theme
+    local defaults = (theme.styles and theme.styles.Input) or {}
+
+    local function pick(key, fallback)
+        if style and style[key] ~= nil then return style[key] end
+        if defaults[key] ~= nil then return defaults[key] end
+        return fallback
+    end
+
+    local bgColor      = pick("backgroundColor", theme.colors.primary)
+    local borderCol    = pick("borderColor", theme.colors.accent)
+    local textColor    = pick("textColor", theme.colors.text)
+    local placeholderC = pick("placeholderColor", { 150, 150, 150, 255 })
+    local radius       = pick("borderRadius", 0.0)
 
     local id = tostring(x) .. tostring(y)
     local isFocused = (activeState.focusedHash == id)
@@ -51,16 +66,23 @@ return function(Mantle, text, placeholder, x, y, width)
         end
     end
 
-    local borderColor = isFocused and Mantle.Theme.colors.highlight or Mantle.Theme.colors.accent
-    rl.DrawRectangle(x, y, width, height, Mantle.Theme.colors.primary)
-    rl.DrawRectangleLines(x, y, width, height, borderColor)
+    local focusBorderColor = isFocused and Mantle.Theme.colors.highlight or borderCol
+    local rect = { x = x, y = y, width = width, height = height }
+
+    if radius > 0 then
+        rl.DrawRectangleRounded(rect, radius, 12, bgColor)
+        rl.DrawRectangleRoundedLines(rect, radius, 12, 1, focusBorderColor)
+    else
+        rl.DrawRectangle(x, y, width, height, bgColor)
+        rl.DrawRectangleLines(x, y, width, height, focusBorderColor)
+    end
 
     local displayTxt = text
-    local txtColor = Mantle.Theme.colors.text
+    local txtColor = textColor
 
     if #text == 0 then
         displayTxt = placeholder or ""
-        txtColor = { 150, 150, 150, 255 }
+        txtColor = placeholderC
     end
 
     local font = Mantle.Theme.font or rl.GetFontDefault()

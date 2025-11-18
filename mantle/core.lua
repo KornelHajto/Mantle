@@ -5,9 +5,11 @@ local Core = {}
 
 
 local dragState = {
-    active = false,
-    offsetX = 0,
-    offsetY = 0
+    active  = false,
+    mouseX  = 0,
+    mouseY  = 0,
+    winX    = 0,
+    winY    = 0
 }
 
 -- The function we designed for the weather widget footer
@@ -82,13 +84,56 @@ function Core.DrawIcon(texture, centerX, centerY, scale, tint)
     )
 end
 
+-- DrawRectStyle: unified rectangle drawing with style support
+function Core.DrawRectStyle(rect, style, themeDefaults)
+    local s = style or {}
+    local t = themeDefaults or {}
+
+    local roundness = s.borderRadius or t.borderRadius or 0
+    local bg        = s.backgroundColor or t.backgroundColor
+    local border    = s.borderColor or t.borderColor
+    local borderW   = s.borderWidth or t.borderWidth or 1
+    local gradient  = s.gradient -- e.g. { from = {...}, to = {...}, vertical = true }
+
+    if gradient then
+        if gradient.vertical then
+            rl.DrawRectangleGradientV(rect.x, rect.y, rect.width, rect.height,
+                gradient.from, gradient.to)
+        else
+            rl.DrawRectangleGradientH(rect.x, rect.y, rect.width, rect.height,
+                gradient.from, gradient.to)
+        end
+    elseif bg then
+        if roundness > 0 then
+            rl.DrawRectangleRounded(rect, roundness, 12, bg)
+        else
+            rl.DrawRectangle(rect.x, rect.y, rect.width, rect.height, bg)
+        end
+    end
+
+    if border and borderW > 0 then
+        if roundness > 0 then
+            rl.DrawRectangleRoundedLines(rect, roundness, 12, borderW, border)
+        else
+            rl.DrawRectangleLinesEx(rect, borderW, border)
+        end
+    end
+end
+
 function Core.HandleDrag()
     -- 1. Start Dragging
     if rl.IsMouseButtonPressed(0) then
         dragState.active = true
+
+        -- Use window-relative mouse position
         local mouse = rl.GetMousePosition()
-        dragState.offsetX = mouse.x
-        dragState.offsetY = mouse.y
+        dragState.mouseX = mouse.x
+        dragState.mouseY = mouse.y
+
+        -- Store initial window position
+        local winPos = rl.GetWindowPosition()
+        dragState.winX = winPos.x
+        dragState.winY = winPos.y
     end
 
     -- 2. Stop Dragging
@@ -96,17 +141,21 @@ function Core.HandleDrag()
         dragState.active = false
     end
 
-    -- 3. Update Position
-    if dragState.active then
-        local mouse = rl.GetMousePosition()
+    -- 3. Update Position (only when dragging)
+    if dragState.active and rl.IsMouseButtonDown(0) then
+        -- Get current window position
         local winPos = rl.GetWindowPosition()
+        
+        -- Get current mouse position (window-relative)
+        local mouse = rl.GetMousePosition()
 
-        -- Calculate how much the mouse moved relative to where we grabbed
-        local deltaX = mouse.x - dragState.offsetX
-        local deltaY = mouse.y - dragState.offsetY
+        -- Calculate where the window should be:
+        -- Current window position + mouse offset from grab point
+        local newX = winPos.x + mouse.x - dragState.mouseX
+        local newY = winPos.y + mouse.y - dragState.mouseY
 
-        -- Move the window by that amount
-        rl.SetWindowPosition(math.floor(winPos.x + deltaX), math.floor(winPos.y + deltaY))
+        -- Move window to new position
+        rl.SetWindowPosition(math.floor(newX), math.floor(newY))
     end
 end
 
