@@ -1,7 +1,8 @@
 # Mantle UI Framework
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/KornelHajto/Mantle/main/assets/readme_showcase.png" alt="Mantle Framework Showcase" width="600"/>
+  <img src="https://raw.githubusercontent.com/KornelHajto/Mantle/main/images/weather.png" width="48%">
+  <img src="https://raw.githubusercontent.com/KornelHajto/Mantle/main/images/graph.png" width="48%">
 </p>
 
 **Mantle** is a lightweight, cross-platform **Immediate-Mode UI (IMGUI)** framework built on **Lua** and the **Raylib** library.
@@ -277,11 +278,10 @@ end
 
 ---
 
-## 📝 License
-
+📝 Acknowledgements & License
 This project is open source and available under the MIT License.
 
----
+A special thank you to the original terra project (https://github.com/chris-montero/terra) for providing the initial inspiration, design aesthetic, and the core concept of a clean, minimal desktop utility framework.
 
 ## 🤝 Contributing
 
