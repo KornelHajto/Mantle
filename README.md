@@ -17,7 +17,6 @@ It abstracts away the complexities of the game loop, z-ordering, and coordinate 
 * **Automatic Layout:** Features a **Cursor-based Layout Engine** (`Row`/`Column`) to eliminate manual X/Y coordinate math.
 * **Layering (Z-Index Protection):** Popups and Dropdown menus float on a separate layer and automatically block input to widgets underneath them.
 * **Input Blocking System:** Prevents click bleed-through when dropdowns or modals overlay other interactive elements.
-* **Cross-Platform Ready:** The same Lua code compiles to executables for Windows and Linux.
 * **High Performance:** Uses LuaJIT and Raylib's GPU-backed drawing for smooth, fast, and low-resource consumption.
 
 ---
