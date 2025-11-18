@@ -182,15 +182,27 @@ function Mantle.Slider(value, x, y, width)
     return result
 end
 
-function Mantle.Panel(x, y, width, height, color, contentFunc)
-    local finalX, finalY = resolvePos(x, y)
-    panel_logic(Mantle, finalX, finalY, width, height, color)
+function Mantle.Panel(a1, a2, a3, a4, a5, a6)
+    local x, y, w, h, color, contentFunc
+
+    if type(a3) == "number" then
+        x, y, w, h = a1, a2, a3, a4
+        color = a5
+        contentFunc = a6
+    else
+        w, h = a1, a2
+        color = a3
+        contentFunc = a4
+        x, y = resolvePos(nil, nil) -- Use Layout engine
+    end
+
+    panel_logic(Mantle, x, y, w, h, color)
 
     if contentFunc then
         Mantle.Column(x + 10, y + 10, 10, contentFunc)
     end
 
-    Layout.Advance(width, height)
+    Layout.Advance(w, h)
 end
 
 function Mantle.Input(text, placeholder, x, y, w)
