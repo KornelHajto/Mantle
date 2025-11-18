@@ -6,7 +6,8 @@ if not rl then error("Mantle: Could not find global 'rl'.") end
 -- Imports
 Mantle.Theme = require("mantle.theme")
 local Core = require("mantle.core")
-local Layout = require("mantle.layout") -- <--- NEW
+local Layout = require("mantle.layout")
+local Assets = require("mantle.assets")
 
 local button_logic = require("mantle.widgets.button")
 local checkbox_logic = require("mantle.widgets.checkbox")
@@ -78,6 +79,16 @@ function Mantle.Row(x, y, padding, contentFunc)
 end
 
 -- ============================
+-- ASSETS
+-- ============================
+
+function Mantle.LoadFont(path, size)
+    local font = Assets.LoadFont(path, size)
+    Mantle.Theme.font = font
+    Mantle.Theme.fontSize = size
+end
+
+-- ============================
 -- FRAMEWORK LIFECYCLE
 -- ============================
 
@@ -122,12 +133,18 @@ function Mantle.Circle(x, y, radius, color)
 end
 
 function Mantle.Text(text, size, color, x, y)
-    -- Note: Swapped args so x,y are optional at the end
-    local w = rl.MeasureText(text, size)
-    local h = size
+    local font = Mantle.Theme.font or rl.GetFontDefault()
+    local fontSize = size or Mantle.Theme.fontSize
+    local spacing = 1.0 -- Space between letters
+
+    local dims = rl.MeasureTextEx(font, text, fontSize, spacing)
+    local w = dims.x
+    local h = dims.y
+
     local finalX, finalY = resolvePos(x, y)
 
-    rl.DrawText(text, finalX, finalY, size, checkColor(color))
+    rl.DrawTextEx(font, text, { x = finalX, y = finalY }, fontSize, spacing, checkColor(color))
+
     Layout.Advance(w, h)
 end
 

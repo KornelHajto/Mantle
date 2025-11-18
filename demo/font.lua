@@ -6,12 +6,12 @@ Mantle.Window({
     width = 500,
     height = 550,
     title = "Mantle Font Demo",
-    draggable = true
+    draggable = false
 })
 
 -- 2. LOAD FONTS
 -- This loads the font AND sets it as the default for Mantle.Theme
-Mantle.LoadFont("assets/roboto.ttf", 22)
+Mantle.LoadFont("assets/Roboto.ttf", 22)
 
 -- 3. APP STATE
 local sliderVal = 0.5

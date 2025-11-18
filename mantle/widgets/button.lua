@@ -25,11 +25,23 @@ return function(Mantle, text, x, y, width, height)
     rl.DrawRectangle(x, y, width, height, color)
     rl.DrawRectangleLines(x, y, width, height, Mantle.Theme.colors.accent)
 
-    local txtWidth = rl.MeasureText(text, Mantle.Theme.fontSize)
-    local txtX = x + (width - txtWidth) / 2
-    local txtY = y + (height - Mantle.Theme.fontSize) / 2
+    local font = Mantle.Theme.font or rl.GetFontDefault()
+    local fontSize = Mantle.Theme.fontSize
+    local spacing = 1.0
 
-    rl.DrawText(text, math.floor(txtX), math.floor(txtY), Mantle.Theme.fontSize, Mantle.Theme.colors.text)
+    local dims = rl.MeasureTextEx(font, text, fontSize, spacing)
+
+    local txtX = x + (width - dims.x) / 2
+    local txtY = y + (height - dims.y) / 2
+
+    rl.DrawTextEx(
+        font,
+        text,
+        { x = math.floor(txtX), y = math.floor(txtY) },
+        fontSize,
+        spacing,
+        Mantle.Theme.colors.text
+    )
 
     return isHovered and isReleased
 end
