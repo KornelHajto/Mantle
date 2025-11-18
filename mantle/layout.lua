@@ -1,8 +1,12 @@
--- mantle/layout.lua
 local Layout = {}
 
 -- This stack stores {x, y, padding} for nested layouts
 local stack = {}
+
+-- === NEW: Store the size of the most recently finished layout ===
+-- The ScrollArea widget reads these to know how tall the content was.
+Layout.lastWidth = 0
+Layout.lastHeight = 0
 
 function Layout.Begin(type, x, y, padding)
     local startX, startY = x, y
@@ -10,8 +14,9 @@ function Layout.Begin(type, x, y, padding)
     -- If we are in a nested layout, use its cursor as our start
     if #stack > 0 then
         local parent = stack[#stack]
-        startX = parent.cursorX
-        startY = parent.cursorY
+        -- If x/y were not provided (nil), use the parent's cursor
+        if not startX then startX = parent.cursorX end
+        if not startY then startY = parent.cursorY end
     end
 
     table.insert(stack, {
@@ -29,31 +34,41 @@ end
 function Layout.End()
     local finished = table.remove(stack)
 
+    -- Calculate exactly how big that group was
+    local totalW = (finished.type == "row") and (finished.cursorX - finished.startX) or finished.maxChildWidth
+    local totalH = (finished.type == "column") and (finished.cursorY - finished.startY) or finished.maxChildHeight
+
+    -- === NEW: Save the size so widgets (like ScrollArea) can read it ===
+    Layout.lastWidth = totalW
+    Layout.lastHeight = totalH
+
     -- Now, tell the *parent* layout how much space this layout group took
     if #stack > 0 then
-        local totalW = (finished.type == "row") and finished.cursorX - finished.startX or finished.maxChildWidth
-        local totalH = (finished.type == "column") and finished.cursorY - finished.startY or finished.maxChildHeight
         Layout.Advance(totalW, totalH)
     end
 end
 
--- Get the drawing position for the *next* widget
 function Layout.GetCursor()
     if #stack == 0 then return nil end
     return stack[#stack].cursorX, stack[#stack].cursorY
 end
 
--- Move the cursor after a widget is drawn
 function Layout.Advance(w, h)
     if #stack == 0 then return end
     local current = stack[#stack]
 
     if current.type == "column" then
         current.cursorY = current.cursorY + h + current.padding
+
         current.maxChildWidth = math.max(current.maxChildWidth, w)
+
+        current.maxChildHeight = current.maxChildHeight + h + current.padding
     elseif current.type == "row" then
         current.cursorX = current.cursorX + w + current.padding
+
         current.maxChildHeight = math.max(current.maxChildHeight, h)
+
+        current.maxChildWidth = current.maxChildWidth + w + current.padding
     end
 end
 

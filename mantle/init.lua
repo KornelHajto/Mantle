@@ -14,6 +14,7 @@ local checkbox_logic = require("mantle.widgets.checkbox")
 local slider_logic = require("mantle.widgets.slider")
 local panel_logic = require("mantle.widgets.panel")
 local input_logic = require("mantle.widgets.input")
+local scroll_logic = require("mantle.widgets.scroll")
 
 -- Internal Configuration
 local config = {
@@ -214,6 +215,17 @@ function Mantle.Input(text, placeholder, x, y, w)
     Layout.Advance(width, height)
 
     return newText
+end
+
+function Mantle.ScrollArea(width, height, contentFunc)
+    width = width or 200
+    height = height or 200
+
+    local x, y = resolvePos(nil, nil)
+
+    scroll_logic(Mantle, width, height, contentFunc, x, y)
+
+    Layout.Advance(width, height)
 end
 
 -- ============================
