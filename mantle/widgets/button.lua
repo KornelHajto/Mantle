@@ -9,8 +9,11 @@ return function(Mantle, text, x, y, width, height)
     local isDown = rl.IsMouseButtonDown(0)
     local isReleased = rl.IsMouseButtonReleased(0)
 
-    local isHovered = (mouseX >= x and mouseX <= x + width
-        and mouseY >= y and mouseY <= y + height)
+    local isBlocked = Mantle.IsMouseBlocked()
+
+    local isHovered = (not isBlocked) and
+        (mouseX >= x and mouseX <= x + width and
+            mouseY >= y and mouseY <= y + height)
 
     local color = Mantle.Theme.colors.primary
 

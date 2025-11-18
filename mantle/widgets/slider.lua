@@ -15,8 +15,10 @@ return function(Mantle, value, x, y, width)
     local mouseX = rl.GetMouseX()
     local mouseY = rl.GetMouseY()
 
-    local isHovered = (mouseX >= x - knobRadius and mouseX <= x + width + knobRadius and
-        mouseY >= y and mouseY <= y + height)
+    local isBlocked = Mantle.IsMouseBlocked()
+    local isHovered = (not isBlocked) and
+        (mouseX >= x - knobRadius and mouseX <= x + width + knobRadius and
+            mouseY >= y and mouseY <= y + height)
 
     if isHovered and rl.IsMouseButtonDown(0) then
         local relativeX = mouseX - x

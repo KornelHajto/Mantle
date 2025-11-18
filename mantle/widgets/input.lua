@@ -14,8 +14,11 @@ return function(Mantle, text, placeholder, x, y, width)
     local isFocused = (activeState.focusedHash == id)
 
     local mouse = rl.GetMousePosition()
-    local isHovered = (mouse.x >= x and mouse.x <= x + width and
-        mouse.y >= y and mouse.y <= y + height)
+
+    local isBlocked = Mantle.IsMouseBlocked()
+    local isHovered = (not isBlocked) and
+        (mouse.x >= x and mouse.x <= x + width and
+            mouse.y >= y and mouse.y <= y + height)
 
     if rl.IsMouseButtonPressed(0) then
         if isHovered then
@@ -60,21 +63,23 @@ return function(Mantle, text, placeholder, x, y, width)
         txtColor = { 150, 150, 150, 255 }
     end
 
-    local maxChars = math.floor((width - 20) / 10)
-    if #displayTxt > maxChars then
-        displayTxt = "..." .. string.sub(displayTxt, -maxChars + 3)
+    local font = Mantle.Theme.font or rl.GetFontDefault()
+    local availableW = width - 20
+    local textW = rl.MeasureTextEx(font, displayTxt, Mantle.Theme.fontSize, 1).x
+
+    if textW > availableW then
+        while rl.MeasureTextEx(font, "..." .. displayTxt, Mantle.Theme.fontSize, 1).x > availableW do
+            displayTxt = string.sub(displayTxt, 2)
+        end
+        displayTxt = "..." .. displayTxt
     end
 
-    rl.DrawText(displayTxt, x + 10, y + 10, Mantle.Theme.fontSize, txtColor)
+    rl.DrawTextEx(font, displayTxt, { x = x + 10, y = y + 10 }, Mantle.Theme.fontSize, 1, txtColor)
 
     if isFocused then
         if (math.floor(rl.GetTime() * 2) % 2) == 0 then
-            local textWidth = 0
-            if #text > 0 then
-                textWidth = rl.MeasureText(displayTxt, Mantle.Theme.fontSize)
-            end
-
-            rl.DrawRectangle(x + 10 + textWidth + 2, y + 8, 2, 24, Mantle.Theme.colors.highlight)
+            local cursorX = x + 10 + rl.MeasureTextEx(font, displayTxt, Mantle.Theme.fontSize, 1).x + 2
+            rl.DrawRectangle(math.floor(cursorX), y + 8, 2, 24, Mantle.Theme.colors.highlight)
         end
     end
 

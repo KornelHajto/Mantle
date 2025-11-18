@@ -4,15 +4,19 @@ return function(Mantle, text, checked, x, y)
     local size = 20
     local padding = 8
 
+    local font = Mantle.Theme.font or rl.GetFontDefault()
+    local fontSize = Mantle.Theme.fontSize
 
-    local textWidth = rl.MeasureText(text, Mantle.Theme.fontSize)
-    local totalWidth = size + padding + textWidth
+    local textDims = rl.MeasureTextEx(font, text, fontSize, 1)
+    local totalWidth = size + padding + textDims.x
 
     local mouseX = rl.GetMouseX()
     local mouseY = rl.GetMouseY()
 
-    local isHovered = (mouseX >= x and mouseX <= x + totalWidth
-        and mouseY >= y and mouseY <= y + size)
+    local isBlocked = Mantle.IsMouseBlocked()
+    local isHovered = (not isBlocked) and
+        (mouseX >= x and mouseX <= x + totalWidth and
+            mouseY >= y and mouseY <= y + size)
 
     if isHovered and rl.IsMouseButtonReleased(0) then
         checked = not checked
@@ -24,7 +28,7 @@ return function(Mantle, text, checked, x, y)
         rl.DrawRectangle(x + margin, y + margin, size - margin * 2, size - margin * 2, Mantle.Theme.colors.highlight)
     end
 
-    rl.DrawText(text, x + size + padding, y, Mantle.Theme.fontSize, Mantle.Theme.colors.text)
+    rl.DrawTextEx(font, text, { x = x + size + padding, y = y }, fontSize, 1, Mantle.Theme.colors.text)
 
     return checked
 end
