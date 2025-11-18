@@ -1,87 +1,131 @@
 local Mantle = require("mantle.init")
 local rl = rl
 
--- 1. WINDOW SETUP
+-- 1. WINDOW CONFIGURATION
 Mantle.Window({
-    width = 600,
-    height = 500,
-    title = "Dropdown & Layer Demo",
+    width = 1000,
+    height = 700,
+    title = "Mantle Framework Showcase",
     draggable = true,
     transparent = true
 })
 
--- 2. ASSETS
+-- 2. LOAD ASSETS
+-- Ensure 'assets/roboto.ttf' exists, or change this to a font you have
 Mantle.LoadFont("assets/roboto.ttf", 20)
 
--- 3. THEME SETUP
+-- 3. THEME (Dracula-inspired)
 local Pal = {
-    bg = { 30, 30, 46, 255 },
-    panel = { 50, 50, 75, 255 },
+    bg     = { 30, 30, 46, 255 },
+    panel  = { 50, 50, 75, 255 },
+    header = { 40, 40, 60, 255 },
+    text   = { 205, 214, 244, 255 },
+    dim    = { 147, 153, 178, 255 },
     accent = { 137, 180, 250, 255 },
-    text = { 205, 214, 244, 255 },
-    dim = { 147, 153, 178, 255 }
+    alert  = { 243, 139, 168, 255 }
 }
 Mantle.Theme.colors.primary = Pal.panel
 Mantle.Theme.colors.text = Pal.text
 Mantle.Theme.colors.accent = Pal.accent
 Mantle.Theme.colors.highlight = { 69, 71, 90, 255 }
 
--- 4. APP STATE
-local resolutions = { "1920x1080", "1280x720", "800x600", "640x480" }
-local resIndex = 1
+-- 4. APPLICATION STATE
+-- We define these OUTSIDE the loop so they remember their values.
 
+-- Dropdown Data
+local resolutions = { "1920x1080", "1280x720", "800x600" }
+local resIndex = 1
 local qualities = { "Low", "Medium", "High", "Ultra" }
 local qualIndex = 3
 
-local isVsync = true
+-- Input Data
+local serverName = "Production-Server-01"
 
--- 5. RUN LOOP
+-- Checkbox Data (Generate 20 states)
+local checks = {}
+for i = 1, 20 do checks[i] = false end
+
+-- 5. MAIN LOOP
 Mantle.Run(function()
     Mantle.Clear()
-    Mantle.Panel(0, 0, 600, 500, Pal.bg) -- Main Background
 
-    Mantle.Column(50, 50, 20, function()
-        Mantle.Text("Graphics Settings", 30, Pal.accent)
+    -- === ROOT CONTAINER ===
+    Mantle.Panel(0, 0, 1000, 700, Pal.bg)
 
-        -- Container Panel
-        Mantle.Panel(500, 350, Pal.panel, function()
-            -- A. Row of Controls
-            Mantle.Row(nil, nil, 40, function()
-                -- Column 1: Dropdowns
-                Mantle.Column(nil, nil, 10, function()
-                    Mantle.Text("Resolution", 14, Pal.dim)
+    -- === TOP HEADER ===
+    Mantle.Panel(1000, 60, Pal.header, function()
+        Mantle.Row(nil, nil, nil, nil, 10, function()
+            Mantle.Text("MANTLE DASHBOARD", 24, Pal.accent)
+            Mantle.Spacer(50)
+            Mantle.Text("v2.0.0 - Stable Build", 14, Pal.dim)
 
-                    -- DROPDOWN 1
-                    resIndex = Mantle.Dropdown(resolutions, resIndex, nil, nil, 200)
+            -- Push user info to the right (Manual spacer for now)
+            Mantle.Spacer(400)
+            Mantle.Button("Log Out", nil, nil, 120, 35)
+        end)
+    end)
 
-                    Mantle.Text("Texture Quality", 14, Pal.dim)
+    -- === MAIN CONTENT SPLIT ===
+    Mantle.Row(nil, nil, nil, nil, 0, function()
+        -- LEFT: SETTINGS PANEL
+        Mantle.Panel(400, 640, Pal.panel, function()
+            Mantle.Text("Server Configuration", 20, Pal.text)
+            Mantle.Rect(0, 0, 0, 10, { 0, 0, 0, 0 }) -- Margin
 
-                    -- DROPDOWN 2
-                    qualIndex = Mantle.Dropdown(qualities, qualIndex, nil, nil, 200)
-                end)
+            -- A. Dropdowns (Z-Index Test)
+            Mantle.Text("Display Resolution", 14, Pal.dim)
+            resIndex = Mantle.Dropdown(resolutions, resIndex, nil, nil, 250)
 
-                -- Column 2: Checkboxes
-                Mantle.Column(nil, nil, 15, function()
-                    Mantle.Text("Display Options", 14, Pal.dim)
-                    isVsync = Mantle.Checkbox("Enable V-Sync", isVsync)
-                    Mantle.Checkbox("Show FPS", true)
+            Mantle.Rect(0, 0, 0, 10, { 0, 0, 0, 0 })
 
-                    Mantle.Rect(0, 0, 0, 20, { 0, 0, 0, 0 }) -- Spacer
-                    Mantle.Button("Reset Default", nil, nil, 150, 40)
-                end)
-            end)
+            Mantle.Text("Render Quality", 14, Pal.dim)
+            -- This dropdown will overlap the input field below when opened!
+            qualIndex = Mantle.Dropdown(qualities, qualIndex, nil, nil, 250)
 
-            -- B. Bottom Section (To prove layering)
-            Mantle.Rect(0, 0, 0, 30, { 0, 0, 0, 0 }) -- Space
-            Mantle.Line(0, 0, 460, 0, Pal.dim, 1.0) -- Divider Line
-            Mantle.Rect(0, 0, 0, 10, { 0, 0, 0, 0 }) -- Space
+            Mantle.Rect(0, 0, 0, 20, { 0, 0, 0, 0 })
 
-            Mantle.Text("The dropdowns above will float OVER this button!", 14, { 243, 139, 168, 255 })
+            -- B. Input Field
+            Mantle.Text("Hostname", 14, Pal.dim)
+            serverName = Mantle.Input(serverName, "Enter name...", nil, nil, 300)
 
-            -- If layering works, the dropdown menu covers this button when opened.
-            if Mantle.Button("Apply Settings", nil, nil, 460, 50) then
-                print("Settings Applied: " .. resolutions[resIndex] .. " / " .. qualities[qualIndex])
+            Mantle.Rect(0, 0, 0, 40, { 0, 0, 0, 0 })
+
+            -- C. Overlap Test Button
+            -- If the Dropdown input blocking works, clicking "High" won't click this button.
+            Mantle.Text("Overlay Test Zone", 14, Pal.alert)
+            if Mantle.Button("DANGER ZONE", nil, nil, 350, 50) then
+                print("Danger button clicked!")
             end
+        end)
+
+        -- RIGHT: SCROLLABLE LIST
+        -- We wrap the scroll area in a column to give it padding/structure
+        Mantle.Column(nil, nil, 0, 0, 0, function()
+            -- We use a transparent container for the list area
+            Mantle.Panel(600, 640, { 0, 0, 0, 0 }, function()
+                Mantle.Text("Active Modules", 20, Pal.text)
+                Mantle.Text("Scroll down to see virtualization status.", 14, Pal.dim)
+
+                -- === SCROLL AREA START ===
+                Mantle.ScrollArea(560, 550, function()
+                    for i = 1, 20 do
+                        Mantle.Row(nil, nil, nil, nil, 10, function()
+                            -- Stateful Checkbox
+                            checks[i] = Mantle.Checkbox("Module " .. i, checks[i])
+
+                            -- Dynamic Status Text
+                            local status = checks[i] and "Active" or "Disabled"
+                            local color = checks[i] and { 100, 255, 100, 255 } or Pal.dim
+                            Mantle.Text(status, 14, color)
+                        end)
+                    end
+
+                    Mantle.Rect(0, 0, 0, 20, { 0, 0, 0, 0 })
+                    Mantle.Button("Save Configuration", nil, nil, 500, 50)
+                    Mantle.Rect(0, 0, 0, 50, { 0, 0, 0, 0 }) -- Bottom padding
+                end)
+                -- === SCROLL AREA END ===
+            end)
         end)
     end)
 end)

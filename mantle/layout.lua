@@ -8,7 +8,7 @@ local stack = {}
 Layout.lastWidth = 0
 Layout.lastHeight = 0
 
-function Layout.Begin(type, x, y, padding)
+function Layout.Begin(type, x, y, w, h, padding)
     local startX, startY = x, y
 
     -- If we are in a nested layout, use its cursor as our start
@@ -23,6 +23,10 @@ function Layout.Begin(type, x, y, padding)
         type = type,
         startX = startX or 0,
         startY = startY or 0,
+
+        width = w or 0,
+        height = h or 0,
+
         cursorX = startX or 0,
         cursorY = startY or 0,
         padding = padding or 10,
@@ -69,6 +73,21 @@ function Layout.Advance(w, h)
         current.maxChildHeight = math.max(current.maxChildHeight, h)
 
         current.maxChildWidth = current.maxChildWidth + w + current.padding
+    end
+end
+
+function Layout.GetRemaining()
+    if #stack == 0 then return 0 end
+    local current = stack[#stack]
+
+    if current.type == "column" then
+        if current.height == 0 then return 0 end     -- No limit defined
+        local used = current.cursorY - current.startY
+        return math.max(0, current.height - used)
+    else                                            -- row
+        if current.width == 0 then return 0 end     -- No limit defined
+        local used = current.cursorX - current.startX
+        return math.max(0, current.width - used)
     end
 end
 

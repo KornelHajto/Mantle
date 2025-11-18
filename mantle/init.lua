@@ -31,9 +31,8 @@ local config = {
 local postDrawQueue = {}
 
 -- INPUT BLOCKING STATE
--- Used to prevent clicks from bleeding through popups (like Dropdowns)
-local currentBlockRect = nil -- The block active for THIS frame
-local nextBlockRect = nil    -- The block being built for the NEXT frame
+local currentBlockRect = nil
+local nextBlockRect = nil
 
 -- Color Helper
 local function checkColor(c)
@@ -65,19 +64,13 @@ function Mantle.Run(drawCallback)
         Mantle.Begin()
         rl.BeginDrawing()
 
-        -- 1. Promote Blocker for this frame
-        -- Take the blocking request from the previous frame and apply it now
         currentBlockRect = nextBlockRect
-        nextBlockRect = nil -- Reset for new requests
-
-        -- 2. Reset Queue
+        nextBlockRect = nil
         postDrawQueue = {}
 
-        -- 3. Draw Main UI
         if drawCallback then drawCallback() end
 
-        -- 4. Draw Popups (Top Layer)
-        rl.EndScissorMode() -- Ensure we draw over scroll areas
+        rl.EndScissorMode()
         for _, drawFunc in ipairs(postDrawQueue) do
             drawFunc()
         end
@@ -93,20 +86,13 @@ end
 -- INPUT BLOCKING API
 -- ============================
 
--- Call this to block input in a specific area for the NEXT frame
--- (Used by Dropdowns/Popups)
 function Mantle.SetInputBlock(x, y, w, h)
-    -- Simple implementation: last call wins (supports one active popup)
-    -- A more complex version would support a list of blocked rects
     nextBlockRect = { x = x, y = y, w = w, h = h }
 end
 
--- Widgets call this to see if they are allowed to react to the mouse
 function Mantle.IsMouseBlocked()
     if not currentBlockRect then return false end
-
     local m = rl.GetMousePosition()
-    -- Check if mouse is inside the blocked rectangle
     return (m.x >= currentBlockRect.x and m.x <= currentBlockRect.x + currentBlockRect.w and
         m.y >= currentBlockRect.y and m.y <= currentBlockRect.y + currentBlockRect.h)
 end
@@ -115,16 +101,29 @@ end
 -- LAYOUT API
 -- ============================
 
-function Mantle.Column(x, y, padding, contentFunc)
-    Layout.Begin("column", x, y, padding)
+function Mantle.Column(x, y, w, h, padding, contentFunc)
+    Layout.Begin("column", x, y, w, h, padding)
     contentFunc()
     Layout.End()
 end
 
-function Mantle.Row(x, y, padding, contentFunc)
-    Layout.Begin("row", x, y, padding)
+function Mantle.Row(x, y, w, h, padding, contentFunc)
+    Layout.Begin("row", x, y, w, h, padding)
     contentFunc()
     Layout.End()
+end
+
+-- NEW: Fixed Spacer
+function Mantle.Spacer(size)
+    Layout.Advance(size, size)
+end
+
+-- NEW: Flexible Spacer (Pushes content)
+function Mantle.Fill()
+    local remaining = Layout.GetRemaining()
+    if remaining > 0 then
+        Layout.Advance(remaining, remaining)
+    end
 end
 
 -- ============================
@@ -212,7 +211,8 @@ function Mantle.Button(text, x, y, w, h)
 end
 
 function Mantle.Checkbox(text, checked, x, y)
-    local w = 20 + 8 + rl.MeasureText(text, Mantle.Theme.fontSize)
+    local font = Mantle.Theme.font or rl.GetFontDefault()
+    local w = 20 + 8 + rl.MeasureTextEx(font, text, Mantle.Theme.fontSize, 1).x
     local h = 20
     local finalX, finalY = resolvePos(x, y)
     local result = checkbox_logic(Mantle, text, checked, finalX, finalY)
@@ -245,9 +245,15 @@ function Mantle.Panel(a1, a2, a3, a4, a5, a6)
 
     panel_logic(Mantle, x, y, w, h, color)
 
+    -- === UPDATE: Pass Inner Bounds to Layout ===
     if contentFunc then
-        Mantle.Column(x + 10, y + 10, 10, contentFunc)
+        local padding = 10
+        local innerW = (w or 0) - (padding * 2)
+        local innerH = (h or 0) - (padding * 2)
+        -- Correctly pass 6 arguments: x, y, w, h, padding, func
+        Mantle.Column(x + padding, y + padding, innerW, innerH, padding, contentFunc)
     end
+    -- ============================================
 
     Layout.Advance(w, h)
 end
@@ -273,9 +279,7 @@ function Mantle.Dropdown(options, selectedIndex, x, y, w)
     local finalX, finalY = resolvePos(x, y)
     local width = w or 150
     local height = 40
-
     local newIndex = dropdown_logic(Mantle, options, selectedIndex, finalX, finalY, width)
-
     Layout.Advance(width, height)
     return newIndex
 end

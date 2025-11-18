@@ -48,7 +48,7 @@ return function(Mantle, width, height, contentFunc, x, y)
     -- 6. Start Layout with OFFSET
     -- We start a column, but shift the Y start position UP by scrollY
     -- This moves all child buttons up.
-    Mantle.Column(x, y - state.scrollY, 0, contentFunc)
+    Mantle.Column(x, y - state.scrollY, width, height, 0, contentFunc)
 
     -- 7. Capture Height
     -- We read the value we added to layout.lua

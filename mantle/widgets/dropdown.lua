@@ -46,6 +46,9 @@ return function(Mantle, options, selectedIndex, x, y, width)
             local itemHeight = 35
             local totalHeight = #options * itemHeight
 
+            -- Block input for the dropdown menu area
+            Mantle.SetInputBlock(x, listY, width, totalHeight)
+
             -- Shadow
             rl.DrawRectangle(x + 5, listY + 5, width, totalHeight, { 0, 0, 0, 50 })
 

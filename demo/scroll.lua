@@ -1,52 +1,62 @@
-local Mantle = require("mantle.init")
 local rl = rl
 
-Mantle.Window({ width = 1000, height = 700, title = "Scroll Demo", draggable = true, transparent = true })
-Mantle.LoadFont("assets/roboto.ttf", 20)
+-- State storage for scroll positions
+local scrollStates = {}
 
-local Pal = { bg = { 30, 30, 46, 255 }, panel = { 50, 50, 75, 255 }, text = { 205, 214, 244, 255 }, accent = { 137, 180, 250, 255 } }
-Mantle.Theme.colors.primary = Pal.panel
-Mantle.Theme.colors.text = Pal.text
-Mantle.Theme.colors.accent = Pal.accent
+return function(Mantle, width, height, contentFunc, x, y)
+    -- 1. Generate ID
+    local id = tostring(x) .. tostring(y)
+    if not scrollStates[id] then
+        scrollStates[id] = { scrollY = 0, contentHeight = 0 }
+    end
+    local state = scrollStates[id]
 
--- 1. STATE STORAGE (Outside the loop!)
-local checkboxStates = {}
+    -- 2. Handle Input
+    local mouse = rl.GetMousePosition()
 
--- Initialize them all to false
-for i = 1, 50 do checkboxStates[i] = false end
+    -- === INPUT BLOCKING ===
+    local isBlocked = Mantle.IsMouseBlocked()
+    local isHovered = (not isBlocked) and
+        (mouse.x >= x and mouse.x <= x + width and
+            mouse.y >= y and mouse.y <= y + height)
+    -- ======================
 
-Mantle.Run(function()
-    Mantle.Clear()
-    Mantle.Panel(0, 0, 1000, 700, Pal.bg)
+    if isHovered then
+        local wheel = rl.GetMouseWheelMove()
+        if wheel ~= 0 then
+            state.scrollY = state.scrollY - (wheel * 20) -- Scroll Speed
+        end
+    end
 
-    Mantle.Row(0, 0, 0, function()
-        -- Left Side
-        Mantle.Panel(300, 700, Pal.panel, function()
-            Mantle.Text("Settings", 30, Pal.accent)
-            Mantle.Text("This side does not scroll.", 16, Pal.text)
-        end)
+    -- 3. Clamp Scrolling
+    local maxScroll = math.max(0, state.contentHeight - height)
+    if state.scrollY < 0 then state.scrollY = 0 end
+    if state.scrollY > maxScroll then state.scrollY = maxScroll end
 
-        -- Right Side
-        Mantle.Column(nil, nil, 20, function()
-            Mantle.Text("Advanced Configuration", 24, Pal.text)
+    -- 4. Draw Scrollbar
+    if state.contentHeight > height then
+        local barWidth = 6
+        local barHeight = (height / state.contentHeight) * height
+        local barY = y + (state.scrollY / state.contentHeight) * height
 
-            Mantle.ScrollArea(650, 600, function()
-                Mantle.Text("General Options", 20, Pal.accent)
+        rl.DrawRectangle(x + width - barWidth, y, barWidth, height, { 0, 0, 0, 30 })
+        rl.DrawRectangle(x + width - barWidth, barY, barWidth, barHeight, Mantle.Theme.colors.accent)
+    end
 
-                for i = 1, 50 do
-                    Mantle.Row(nil, nil, 10, function()
-                        -- 2. USE THE STATE
-                        -- Read from table, then Save result back to table
-                        checkboxStates[i] = Mantle.Checkbox("Option " .. i, checkboxStates[i])
+    -- 5. SCISSOR MODE START
+    rl.BeginScissorMode(x, y, width, height)
 
-                        Mantle.Text("Description for option " .. i, 14, { 100, 100, 100, 255 })
-                    end)
-                end
+    -- 6. Start Layout with OFFSET
+    -- === FIX IS HERE ===
+    -- We pass width and 0 (infinite height) to the internal Column
+    -- Signature: Column(x, y, w, h, padding, contentFunc)
+    Mantle.Column(x, y - state.scrollY, width, 0, 0, contentFunc)
+    -- ===================
 
-                Mantle.Rect(0, 0, 0, 20, { 0, 0, 0, 0 })
-                Mantle.Button("Save All Changes", nil, nil, 600, 50)
-                Mantle.Rect(0, 0, 0, 50, { 0, 0, 0, 0 })
-            end)
-        end)
-    end)
-end)
+    -- 7. Capture Height
+    -- Read the height from the layout we just finished
+    state.contentHeight = require("mantle.layout").lastHeight
+
+    -- 8. SCISSOR MODE END
+    rl.EndScissorMode()
+end
