@@ -1,5 +1,3 @@
-local rl = rl
-
 return function(Mantle, x, y, width, height, color, style)
     local theme = Mantle.Theme
     local defaults = (theme.styles and theme.styles.Panel) or {}
@@ -14,18 +12,14 @@ return function(Mantle, x, y, width, height, color, style)
     local radius    = pick("borderRadius", 0.1)
     local borderCol = pick("borderColor", nil)
 
-    local rect = {
-        x = x,
-        y = y,
-        width = width,
-        height = height
-    }
-
-    local segments = 20
-
-    rl.DrawRectangleRounded(rect, radius, segments, bg)
+    love.graphics.setColor(bg[1]/255, bg[2]/255, bg[3]/255, bg[4]/255)
+    love.graphics.rectangle("fill", x, y, width, height)
     
     if borderCol then
-        rl.DrawRectangleRoundedLines(rect, radius, segments, 1, borderCol)
+        love.graphics.setColor(borderCol[1]/255, borderCol[2]/255, borderCol[3]/255, borderCol[4]/255)
+        love.graphics.setLineWidth(1)
+        love.graphics.rectangle("line", x, y, width, height)
     end
+    
+    love.graphics.setColor(1, 1, 1, 1) -- Reset color
 end

@@ -1,5 +1,3 @@
-local rl = rl
-
 -- State management
 local dropdownStates = {}
 
@@ -10,18 +8,15 @@ return function(Mantle, options, selectedIndex, x, y, width)
     -- 1. Manage State
     local id = tostring(x) .. tostring(y)
     if not dropdownStates[id] then
-        -- pendingIndex: Stores the click result from the end of the previous frame
         dropdownStates[id] = { isOpen = false, pendingIndex = nil }
     end
     local state = dropdownStates[id]
 
-    -- === FIX: CHECK FOR PENDING SELECTION ===
     -- If we clicked something last frame, update selectedIndex now
     if state.pendingIndex then
         selectedIndex = state.pendingIndex
-        state.pendingIndex = nil -- Clear it so we don't force it forever
+        state.pendingIndex = nil
     end
-    -- ========================================
 
     -- 2. Draw The Header
     local currentText = options[selectedIndex] or "Select..."
@@ -30,13 +25,15 @@ return function(Mantle, options, selectedIndex, x, y, width)
         state.isOpen = not state.isOpen
     end
 
-    -- Draw Arrow
-    rl.DrawTriangle(
-        { x = x + width - 15, y = y + 15 },
-        { x = x + width - 5, y = y + 15 },
-        { x = x + width - 10, y = y + 25 },
-        Mantle.Theme.colors.text
+    -- Draw Arrow (simple triangle approximation with lines)
+    love.graphics.setColor(Mantle.Theme.colors.text[1]/255, Mantle.Theme.colors.text[2]/255, 
+                           Mantle.Theme.colors.text[3]/255, Mantle.Theme.colors.text[4]/255)
+    love.graphics.polygon("fill", 
+        x + width - 15, y + 15,
+        x + width - 5, y + 15,
+        x + width - 10, y + 25
     )
+    love.graphics.setColor(1, 1, 1, 1)
 
     -- 3. Deferred List Drawing
     if state.isOpen then
@@ -50,40 +47,57 @@ return function(Mantle, options, selectedIndex, x, y, width)
             Mantle.SetInputBlock(x, listY, width, totalHeight)
 
             -- Shadow
-            rl.DrawRectangle(x + 5, listY + 5, width, totalHeight, { 0, 0, 0, 50 })
+            love.graphics.setColor(0, 0, 0, 0.2)
+            love.graphics.rectangle("fill", x + 5, listY + 5, width, totalHeight)
 
             -- Background
-            rl.DrawRectangle(x, listY, width, totalHeight, Mantle.Theme.colors.primary)
-            rl.DrawRectangleLines(x, listY, width, totalHeight, Mantle.Theme.colors.accent)
+            local primary = Mantle.Theme.colors.primary
+            love.graphics.setColor(primary[1]/255, primary[2]/255, primary[3]/255, primary[4]/255)
+            love.graphics.rectangle("fill", x, listY, width, totalHeight)
+            
+            local accent = Mantle.Theme.colors.accent
+            love.graphics.setColor(accent[1]/255, accent[2]/255, accent[3]/255, accent[4]/255)
+            love.graphics.setLineWidth(1)
+            love.graphics.rectangle("line", x, listY, width, totalHeight)
 
-            local mouse = rl.GetMousePosition()
+            local mouseX, mouseY = love.mouse.getPosition()
+
+            -- Track mouse releases for dropdown
+            local wasPressed = Mantle._dropdownPressed or {}
+            local wasDown = wasPressed[id] or false
+            local isDown = love.mouse.isDown(1)
+            local isReleased = wasDown and not isDown
+            wasPressed[id] = isDown
+            Mantle._dropdownPressed = wasPressed
+
+            local font = Mantle.Theme.font or love.graphics.getFont()
+            local oldFont = love.graphics.getFont()
+            love.graphics.setFont(font)
 
             for i, option in ipairs(options) do
                 local itemY = listY + (i - 1) * itemHeight
-                local isHovered = (mouse.x >= x and mouse.x <= x + width and
-                    mouse.y >= itemY and mouse.y <= itemY + itemHeight)
+                local isHovered = (mouseX >= x and mouseX <= x + width and
+                    mouseY >= itemY and mouseY <= itemY + itemHeight)
 
                 if isHovered then
-                    rl.DrawRectangle(x, itemY, width, itemHeight, Mantle.Theme.colors.highlight)
+                    local highlight = Mantle.Theme.colors.highlight
+                    love.graphics.setColor(highlight[1]/255, highlight[2]/255, highlight[3]/255, highlight[4]/255)
+                    love.graphics.rectangle("fill", x, itemY, width, itemHeight)
 
-                    -- === FIX: SAVE SELECTION FOR NEXT FRAME ===
-                    if rl.IsMouseButtonReleased(0) then
-                        state.pendingIndex = i -- Store it!
+                    if isReleased then
+                        state.pendingIndex = i
                         state.isOpen = false
                     end
-                    -- ==========================================
                 end
 
                 -- Draw Option Text
-                rl.DrawTextEx(
-                    Mantle.Theme.font or rl.GetFontDefault(),
-                    option,
-                    { x = x + 10, y = itemY + 8 },
-                    Mantle.Theme.fontSize,
-                    1,
-                    Mantle.Theme.colors.text
-                )
+                local textColor = Mantle.Theme.colors.text
+                love.graphics.setColor(textColor[1]/255, textColor[2]/255, textColor[3]/255, textColor[4]/255)
+                love.graphics.print(option, x + 10, itemY + 8)
             end
+            
+            love.graphics.setFont(oldFont)
+            love.graphics.setColor(1, 1, 1, 1)
         end)
     end
 

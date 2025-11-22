@@ -1,5 +1,3 @@
-local rl = rl
-
 local function clamp(val, min, max)
     return math.max(min, math.min(max, val))
 end
@@ -26,29 +24,36 @@ return function(Mantle, value, x, y, width, style)
     local knobX = x + (width * value)
     local knobY = y + (height / 2)
 
-    local mouseX = rl.GetMouseX()
-    local mouseY = rl.GetMouseY()
+    local mouseX, mouseY = love.mouse.getPosition()
 
     local isBlocked = Mantle.IsMouseBlocked()
     local isHovered = (not isBlocked) and
         (mouseX >= x - knobRadius and mouseX <= x + width + knobRadius and
             mouseY >= y and mouseY <= y + height)
 
-    if isHovered and rl.IsMouseButtonDown(0) then
+    if isHovered and love.mouse.isDown(1) then
         local relativeX = mouseX - x
         value = relativeX / width
-
         value = clamp(value, 0.0, 1.0)
     end
 
-
     local railY = y + (height / 2)
-    rl.DrawLine(x, railY, x + width, railY, trackColor)
+    
+    love.graphics.setColor(trackColor[1]/255, trackColor[2]/255, trackColor[3]/255, trackColor[4]/255)
+    love.graphics.setLineWidth(2)
+    love.graphics.line(x, railY, x + width, railY)
 
-    rl.DrawLine(x, railY, knobX, railY, fillColor)
+    love.graphics.setColor(fillColor[1]/255, fillColor[2]/255, fillColor[3]/255, fillColor[4]/255)
+    love.graphics.line(x, railY, knobX, railY)
 
-    rl.DrawCircle(math.floor(knobX), math.floor(knobY), knobRadius, knobColor)
-    rl.DrawCircleLines(math.floor(knobX), math.floor(knobY), knobRadius, knobBorder)
+    love.graphics.setColor(knobColor[1]/255, knobColor[2]/255, knobColor[3]/255, knobColor[4]/255)
+    love.graphics.circle("fill", math.floor(knobX), math.floor(knobY), knobRadius)
+    
+    love.graphics.setColor(knobBorder[1]/255, knobBorder[2]/255, knobBorder[3]/255, knobBorder[4]/255)
+    love.graphics.setLineWidth(1)
+    love.graphics.circle("line", math.floor(knobX), math.floor(knobY), knobRadius)
+    
+    love.graphics.setColor(1, 1, 1, 1) -- Reset color
 
     return value
 end
