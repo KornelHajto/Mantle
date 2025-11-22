@@ -1,5 +1,3 @@
-local rl = rl
-
 return function(Mantle, text, checked, x, y, style)
     local size = 20
     local padding = 8
@@ -19,45 +17,50 @@ return function(Mantle, text, checked, x, y, style)
     local textColor   = pick("textColor", theme.colors.text)
     local radius      = pick("borderRadius", 0.15)
 
-    local font = theme.font or rl.GetFontDefault()
-    local fontSize = theme.fontSize
+    local font = theme.font or love.graphics.getFont()
+    local textWidth = font:getWidth(text)
+    local totalWidth = size + padding + textWidth
 
-    local textDims = rl.MeasureTextEx(font, text, fontSize, 1)
-    local totalWidth = size + padding + textDims.x
-
-    local mouseX = rl.GetMouseX()
-    local mouseY = rl.GetMouseY()
+    local mouseX, mouseY = love.mouse.getPosition()
 
     local isBlocked = Mantle.IsMouseBlocked()
     local isHovered = (not isBlocked) and
         (mouseX >= x and mouseX <= x + totalWidth and
             mouseY >= y and mouseY <= y + size)
 
-    if isHovered and rl.IsMouseButtonReleased(0) then
+    -- Track checkbox releases
+    local wasPressed = Mantle._checkboxPressed or {}
+    local checkboxId = tostring(x) .. "_" .. tostring(y)
+    local wasDown = wasPressed[checkboxId] or false
+    local isDown = love.mouse.isDown(1)
+    local isReleased = wasDown and not isDown
+    wasPressed[checkboxId] = isDown
+    Mantle._checkboxPressed = wasPressed
+
+    if isHovered and isReleased then
         checked = not checked
     end
 
-    local rect = { x = x, y = y, width = size, height = size }
-
-    if radius > 0 then
-        rl.DrawRectangleRounded(rect, radius, 8, boxColor)
-        rl.DrawRectangleRoundedLines(rect, radius, 8, 1, borderCol)
-    else
-        rl.DrawRectangle(x, y, size, size, boxColor)
-        rl.DrawRectangleLines(x, y, size, size, borderCol)
-    end
+    love.graphics.setColor(boxColor[1]/255, boxColor[2]/255, boxColor[3]/255, boxColor[4]/255)
+    love.graphics.rectangle("fill", x, y, size, size)
+    
+    love.graphics.setColor(borderCol[1]/255, borderCol[2]/255, borderCol[3]/255, borderCol[4]/255)
+    love.graphics.setLineWidth(1)
+    love.graphics.rectangle("line", x, y, size, size)
 
     if checked then
         local margin = 4
-        local checkRect = { x = x + margin, y = y + margin, width = size - margin * 2, height = size - margin * 2 }
-        if radius > 0 then
-            rl.DrawRectangleRounded(checkRect, radius, 8, checkColor)
-        else
-            rl.DrawRectangle(x + margin, y + margin, size - margin * 2, size - margin * 2, checkColor)
-        end
+        love.graphics.setColor(checkColor[1]/255, checkColor[2]/255, checkColor[3]/255, checkColor[4]/255)
+        love.graphics.rectangle("fill", x + margin, y + margin, size - margin * 2, size - margin * 2)
     end
 
-    rl.DrawTextEx(font, text, { x = x + size + padding, y = y }, fontSize, 1, textColor)
+    local oldFont = love.graphics.getFont()
+    love.graphics.setFont(font)
+    love.graphics.setColor(textColor[1]/255, textColor[2]/255, textColor[3]/255, textColor[4]/255)
+    love.graphics.print(text, x + size + padding, y)
+    love.graphics.setFont(oldFont)
+    
+    love.graphics.setColor(1, 1, 1, 1) -- Reset color
 
     return checked
 end

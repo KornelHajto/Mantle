@@ -1,6 +1,5 @@
 local Mantle = require("mantle.init")
 local Assets = require("mantle.assets")
-local rl = rl
 
 -- FIX: We define the dynamic strings here
 local currentDisplayTime = "00:00"
@@ -51,7 +50,7 @@ Mantle.Run(function()
 
     -- === LOAD ASSETS (Cache handles loading once) ===
     local fontClock = Assets.LoadFont("demo/assets/Oswald-Bold.ttf", 100)
-    Mantle.LoadFont("demo/assets/Roboto-Regular.ttf", 20)
+    Mantle.LoadFont("demo/assets/Roboto.ttf", 20)
 
     local cloudImg = Assets.LoadTexture("demo/assets/cloud.png")
     local icons = {
@@ -68,34 +67,45 @@ Mantle.Run(function()
     Mantle.Panel(0, 0, 350, 600, Pal.deepBlue)
 
     local topH = 420
-    rl.DrawRectangleRounded({ x = 0, y = 0, width = 350, height = topH }, 0.1, 10, Pal.skyBlue)
-    rl.DrawRectangle(0, topH - 20, 350, 20, Pal.skyBlue)
+    love.graphics.setColor(Pal.skyBlue[1]/255, Pal.skyBlue[2]/255, Pal.skyBlue[3]/255, Pal.skyBlue[4]/255)
+    love.graphics.rectangle("fill", 0, 0, 350, topH)
+    love.graphics.rectangle("fill", 0, topH - 20, 350, 20)
+    love.graphics.setColor(1, 1, 1, 1)
+    
     Mantle.Line(0, topH, 350, topH, { 255, 255, 255, 50 }, 1)
 
     -- === 2. CLOUD LAYER (Behind Text) ===
     if cloudImg then
         local scale = 0.6
-        local xPos = (350 - (cloudImg.width * scale)) / 2
+        local w = cloudImg:getWidth() * scale
+        local xPos = (350 - w) / 2
 
         -- Full Opacity
-        rl.DrawTextureEx(cloudImg, { x = xPos, y = 20 }, 0, scale, { 255, 255, 255, 255 })
+        love.graphics.setColor(1, 1, 1, 1)
+        love.graphics.draw(cloudImg, xPos, 20, 0, scale, scale)
     end
 
     -- === 3. TEXT LAYER (On Top) ===
     Mantle.Column(0, 160, 350, 400, 0, function()
         -- Clock
-        local timeDim = rl.MeasureTextEx(fontClock, currentDisplayTime, 100, 1)
-        local timeX = (350 - timeDim.x) / 2
-        rl.DrawTextEx(fontClock, currentDisplayTime, { x = timeX, y = 160 }, 100, 1, Pal.text)
+        local oldFont = love.graphics.getFont()
+        love.graphics.setFont(fontClock)
+        local timeW = fontClock:getWidth(currentDisplayTime)
+        local timeX = (350 - timeW) / 2
+        love.graphics.setColor(Pal.text[1]/255, Pal.text[2]/255, Pal.text[3]/255, Pal.text[4]/255)
+        love.graphics.print(currentDisplayTime, timeX, 160)
+        love.graphics.setFont(oldFont)
+        love.graphics.setColor(1, 1, 1, 1)
 
         Mantle.Spacer(110)
 
         -- Date & Temp
-        local dateW = rl.MeasureTextEx(Mantle.Theme.font, currentDisplayDate, 20, 1).x
+        local font = Mantle.Theme.font or love.graphics.getFont()
+        local dateW = font:getWidth(currentDisplayDate)
         Mantle.Text(currentDisplayDate, 20, Pal.text, (350 - dateW) / 2, 280)
 
         local rangeStr = "02" .. DEG .. " - 06" .. DEG
-        local rangeW = rl.MeasureTextEx(Mantle.Theme.font, rangeStr, 20, 1).x
+        local rangeW = font:getWidth(rangeStr)
         Mantle.Text(rangeStr, 20, Pal.text, (350 - rangeW) / 2, 315)
     end)
 
@@ -105,7 +115,8 @@ Mantle.Run(function()
     Mantle.Row(25, footerY, 300, 100, 13, function()
         for i, day in ipairs(forecast) do
             Mantle.Column(nil, nil, 30, 100, 5, function()
-                local dayW = rl.MeasureTextEx(Mantle.Theme.font, day.d, 14, 1).x
+                local font = Mantle.Theme.font or love.graphics.getFont()
+                local dayW = font:getWidth(day.d)
                 local dayX = (30 - dayW) / 2
 
                 local lx, ly = require("mantle.layout").GetCursor()
@@ -117,10 +128,10 @@ Mantle.Run(function()
                 local tex = icons[day.icon]
                 if tex then
                     local targetSize = 25
-                    local scale = targetSize / tex.width
+                    local scale = targetSize / tex:getWidth()
 
                     -- Center the icon in the 30px column
-                    local offsetX = (30 - (tex.width * scale)) / 2
+                    local offsetX = (30 - (tex:getWidth() * scale)) / 2
 
                     -- FINAL FIX: Added +4 to offsetX for visual alignment
                     Mantle.DrawIcon(tex, lx + offsetX + 4, ly + 30, scale)
@@ -129,7 +140,7 @@ Mantle.Run(function()
                 Mantle.Spacer(30)
 
                 -- Temp (Centered)
-                local tempW = rl.MeasureTextEx(Mantle.Theme.font, day.t, 16, 1).x
+                local tempW = font:getWidth(day.t)
                 local tempX = (30 - tempW) / 2
 
                 -- FINAL FIX: Added +3 to tempX for visual alignment

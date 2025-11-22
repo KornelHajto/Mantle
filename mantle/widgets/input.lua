@@ -1,8 +1,7 @@
-local rl = rl
-
 local activeState = {
     focusedHash = nil,
-    backspaceTimer = 0.0
+    backspaceTimer = 0.0,
+    textInput = ""
 }
 
 return function(Mantle, text, placeholder, x, y, width, style)
@@ -28,34 +27,46 @@ return function(Mantle, text, placeholder, x, y, width, style)
     local id = tostring(x) .. tostring(y)
     local isFocused = (activeState.focusedHash == id)
 
-    local mouse = rl.GetMousePosition()
+    local mouseX, mouseY = love.mouse.getPosition()
 
     local isBlocked = Mantle.IsMouseBlocked()
     local isHovered = (not isBlocked) and
-        (mouse.x >= x and mouse.x <= x + width and
-            mouse.y >= y and mouse.y <= y + height)
+        (mouseX >= x and mouseX <= x + width and
+            mouseY >= y and mouseY <= y + height)
 
-    if rl.IsMouseButtonPressed(0) then
+    -- Track mouse clicks
+    local wasPressed = Mantle._inputPressed or {}
+    local wasDown = wasPressed[id] or false
+    local isDown = love.mouse.isDown(1)
+    local isReleased = wasDown and not isDown
+    wasPressed[id] = isDown
+    Mantle._inputPressed = wasPressed
+
+    if isReleased then
         if isHovered then
             activeState.focusedHash = id
+            love.keyboard.setTextInput(true)
         else
-            if isFocused then activeState.focusedHash = nil end
+            if isFocused then 
+                activeState.focusedHash = nil
+                love.keyboard.setTextInput(false)
+            end
         end
     end
 
     if isFocused then
-        local key = rl.GetKeyPressed()
-        while key > 0 do
-            if (key >= 32) and (key <= 125) then
-                text = text .. string.char(key)
-            end
-            key = rl.GetKeyPressed()
+        -- Get text input from love.textinput callback
+        if Mantle._textInputBuffer and #Mantle._textInputBuffer > 0 then
+            text = text .. Mantle._textInputBuffer
+            Mantle._textInputBuffer = ""
         end
 
-        if rl.IsKeyDown(rl.KEY_BACKSPACE) then
-            activeState.backspaceTimer = activeState.backspaceTimer - rl.GetFrameTime()
+        -- Handle backspace
+        if love.keyboard.isDown("backspace") then
+            local dt = love.timer.getDelta()
+            activeState.backspaceTimer = activeState.backspaceTimer - dt
 
-            if rl.IsKeyPressed(rl.KEY_BACKSPACE) or activeState.backspaceTimer < 0 then
+            if love.keyboard.isScancodeDown("backspace") and (activeState.backspaceTimer <= 0) then
                 if #text > 0 then
                     text = string.sub(text, 1, -2)
                 end
@@ -66,16 +77,14 @@ return function(Mantle, text, placeholder, x, y, width, style)
         end
     end
 
-    local focusBorderColor = isFocused and Mantle.Theme.colors.highlight or borderCol
-    local rect = { x = x, y = y, width = width, height = height }
+    local focusBorderColor = isFocused and theme.colors.highlight or borderCol
 
-    if radius > 0 then
-        rl.DrawRectangleRounded(rect, radius, 12, bgColor)
-        rl.DrawRectangleRoundedLines(rect, radius, 12, 1, focusBorderColor)
-    else
-        rl.DrawRectangle(x, y, width, height, bgColor)
-        rl.DrawRectangleLines(x, y, width, height, focusBorderColor)
-    end
+    love.graphics.setColor(bgColor[1]/255, bgColor[2]/255, bgColor[3]/255, bgColor[4]/255)
+    love.graphics.rectangle("fill", x, y, width, height)
+    
+    love.graphics.setColor(focusBorderColor[1]/255, focusBorderColor[2]/255, focusBorderColor[3]/255, focusBorderColor[4]/255)
+    love.graphics.setLineWidth(1)
+    love.graphics.rectangle("line", x, y, width, height)
 
     local displayTxt = text
     local txtColor = textColor
@@ -85,25 +94,33 @@ return function(Mantle, text, placeholder, x, y, width, style)
         txtColor = placeholderC
     end
 
-    local font = Mantle.Theme.font or rl.GetFontDefault()
+    local font = theme.font or love.graphics.getFont()
+    local oldFont = love.graphics.getFont()
+    love.graphics.setFont(font)
+    
     local availableW = width - 20
-    local textW = rl.MeasureTextEx(font, displayTxt, Mantle.Theme.fontSize, 1).x
+    local textW = font:getWidth(displayTxt)
 
     if textW > availableW then
-        while rl.MeasureTextEx(font, "..." .. displayTxt, Mantle.Theme.fontSize, 1).x > availableW do
+        while font:getWidth("..." .. displayTxt) > availableW and #displayTxt > 0 do
             displayTxt = string.sub(displayTxt, 2)
         end
         displayTxt = "..." .. displayTxt
     end
 
-    rl.DrawTextEx(font, displayTxt, { x = x + 10, y = y + 10 }, Mantle.Theme.fontSize, 1, txtColor)
+    love.graphics.setColor(txtColor[1]/255, txtColor[2]/255, txtColor[3]/255, txtColor[4]/255)
+    love.graphics.print(displayTxt, x + 10, y + 10)
 
     if isFocused then
-        if (math.floor(rl.GetTime() * 2) % 2) == 0 then
-            local cursorX = x + 10 + rl.MeasureTextEx(font, displayTxt, Mantle.Theme.fontSize, 1).x + 2
-            rl.DrawRectangle(math.floor(cursorX), y + 8, 2, 24, Mantle.Theme.colors.highlight)
+        if (math.floor(love.timer.getTime() * 2) % 2) == 0 then
+            local cursorX = x + 10 + font:getWidth(displayTxt) + 2
+            love.graphics.setColor(theme.colors.highlight[1]/255, theme.colors.highlight[2]/255, theme.colors.highlight[3]/255, theme.colors.highlight[4]/255)
+            love.graphics.rectangle("fill", math.floor(cursorX), y + 8, 2, 24)
         end
     end
+    
+    love.graphics.setFont(oldFont)
+    love.graphics.setColor(1, 1, 1, 1) -- Reset color
 
     return text
 end

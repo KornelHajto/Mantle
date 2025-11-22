@@ -1,4 +1,3 @@
-local rl = rl
 local Assets = {}
 
 local cache = {
@@ -10,13 +9,13 @@ function Assets.LoadFont(path, size)
     local id = path .. tostring(size)
 
     if not cache.fonts[id] then
-        if not rl.FileExists(path) then
+        local info = love.filesystem.getInfo(path)
+        if not info then
             print("Mantle Warning: Font file not found: " .. path)
-            return rl.GetFontDefault()
+            return love.graphics.newFont(size)
         end
-        cache.fonts[id] = rl.LoadFontEx(path, size, nil, 0)
-
-        rl.SetTextureFilter(cache.fonts[id].texture, rl.TEXTURE_FILTER_BILINEAR)
+        cache.fonts[id] = love.graphics.newFont(path, size)
+        cache.fonts[id]:setFilter("linear", "linear")
     end
 
     return cache.fonts[id]
@@ -24,11 +23,13 @@ end
 
 function Assets.LoadTexture(path)
     if not cache.textures[path] then
-        if not rl.FileExists(path) then
+        local info = love.filesystem.getInfo(path)
+        if not info then
             print("Mantle Warning: Image file not found: " .. path)
             return nil
         end
-        cache.textures[path] = rl.LoadTexture(path)
+        cache.textures[path] = love.graphics.newImage(path)
+        cache.textures[path]:setFilter("linear", "linear")
     end
     return cache.textures[path]
 end

@@ -5,7 +5,7 @@
   <img src="https://raw.githubusercontent.com/KornelHajto/Mantle/main/images/graph.png" width="48%">
 </p>
 
-**Mantle** is a lightweight, cross-platform **Immediate-Mode UI (IMGUI)** framework built on **Lua** and the **Raylib** library.
+**Mantle** is a lightweight, cross-platform **Immediate-Mode UI (IMGUI)** framework built on **Lua** and the **LÖVE2D** game framework.
 
 It abstracts away the complexities of the game loop, z-ordering, and coordinate management, allowing you to quickly build sleek, declarative desktop widgets and applications that run efficiently on Windows, Linux, and macOS.
 
@@ -17,7 +17,7 @@ It abstracts away the complexities of the game loop, z-ordering, and coordinate 
 * **Automatic Layout:** Features a **Cursor-based Layout Engine** (`Row`/`Column`) to eliminate manual X/Y coordinate math.
 * **Layering (Z-Index Protection):** Popups and Dropdown menus float on a separate layer and automatically block input to widgets underneath them.
 * **Input Blocking System:** Prevents click bleed-through when dropdowns or modals overlay other interactive elements.
-* **High Performance:** Uses LuaJIT and Raylib's GPU-backed drawing for smooth, fast, and low-resource consumption.
+* **High Performance:** Uses LuaJIT and LÖVE2D's GPU-backed drawing for smooth, fast, and low-resource consumption.
 
 ---
 
@@ -25,19 +25,22 @@ It abstracts away the complexities of the game loop, z-ordering, and coordinate 
 
 ### Prerequisites
 
-1. **Lua Runner:** Download the pre-compiled `raylua_s` executable for your specific OS from the **TSnake41/raylib-lua** repository and place it in a `bin/` folder.
-2. **Assets:** Ensure your required `.ttf` font files (e.g., `roboto.ttf`) are placed in the `assets/` directory.
+1. **LÖVE2D:** Download and install [LÖVE 11.4 or later](https://love2d.org/) for your operating system.
+2. **Assets:** Ensure your required `.ttf` font files (e.g., `Roboto.ttf`) are placed in the `demo/assets/` directory.
 
 ### Running the Demo
 
-Run the application from your repository root using the appropriate starter script:
+Run the application from your repository root using LÖVE:
 
 ```bash
-# Windows
-.\start.bat
+# Linux/macOS
+love .
 
+# Windows
+"C:\Program Files\LOVE\love.exe" .
+
+# Or drag the folder onto the LÖVE executable
 ```
-Currently no unix version.
 
 ---
 
@@ -254,10 +257,13 @@ end
 - **Fix:** Ensure your dropdown widget calls `Mantle.SetInputBlock()` inside the `Mantle.Layer()` callback
 
 **Issue:** Font not loading
-- **Fix:** Verify the font file exists in `assets/` and the path is correct
+- **Fix:** Verify the font file exists in `demo/assets/` and the path is correct
 
 **Issue:** Application won't start
-- **Fix:** Ensure you have the correct `raylua_s` executable for your OS in the `bin/` folder
+- **Fix:** Ensure you have LÖVE 11.4 or later installed and you're running `love .` from the project directory
+
+**Issue:** Text input not working
+- **Fix:** The input widget uses LÖVE's textinput callback which is automatically registered by Mantle
 
 ---
 
@@ -265,6 +271,8 @@ end
 This project is open source and available under the MIT License.
 
 A special thank you to the original terra project (https://github.com/chris-montero/terra) for providing the initial inspiration, design aesthetic, and the core concept of a clean, minimal desktop utility framework.
+
+**Note:** This framework was originally built for Raylib but has been transitioned to LÖVE2D for better cross-platform support and easier installation.
 
 ## 🤝 Contributing
 
@@ -282,4 +290,4 @@ For questions or support, please open an issue on the GitHub repository.
 
 ---
 
-**Built with ❤️ using Lua and Raylib**
+**Built with ❤️ using Lua and LÖVE2D**

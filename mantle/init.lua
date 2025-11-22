@@ -1,8 +1,5 @@
 local Mantle = {}
 
-local rl = rl
-if not rl then error("Mantle: Could not find global 'rl'.") end
-
 -- Imports
 Mantle.Theme = require("mantle.theme")
 local Core = require("mantle.core")
@@ -27,6 +24,9 @@ local config = {
     targetFPS = 60
 }
 
+-- LOVE2D state
+local drawCallback = nil
+
 -- POST-DRAW QUEUE (Z-Index Layer)
 local postDrawQueue = {}
 
@@ -48,38 +48,18 @@ function Mantle.Window(settings)
     for k, v in pairs(settings) do config[k] = v end
 end
 
-function Mantle.Run(drawCallback)
-    if config.transparent then
-        rl.SetConfigFlags(rl.FLAG_WINDOW_UNDECORATED + rl.FLAG_WINDOW_TRANSPARENT)
+function Mantle.Run(callback)
+    drawCallback = callback
+    
+    -- Update conf.lua values
+    love.window.setTitle(config.title)
+    if not love.window.isOpen() then
+        love.window.setMode(config.width, config.height, {
+            borderless = config.transparent,
+            resizable = false,
+            vsync = 1
+        })
     end
-
-    rl.InitWindow(config.width, config.height, config.title)
-    rl.SetTargetFPS(config.targetFPS)
-
-    while not rl.WindowShouldClose() do
-        if config.draggable and Core.HandleDrag then
-            Core.HandleDrag()
-        end
-
-        Mantle.Begin()
-        rl.BeginDrawing()
-
-        currentBlockRect = nextBlockRect
-        nextBlockRect = nil
-        postDrawQueue = {}
-
-        if drawCallback then drawCallback() end
-
-        rl.EndScissorMode()
-        for _, drawFunc in ipairs(postDrawQueue) do
-            drawFunc()
-        end
-
-        rl.EndDrawing()
-        Mantle.End()
-    end
-
-    rl.CloseWindow()
 end
 
 -- ============================
@@ -144,9 +124,42 @@ end
 -- FRAMEWORK LIFECYCLE
 -- ============================
 
-function Mantle.Begin() end
+function Mantle.Begin()
+    if config.draggable and Core.HandleDrag then
+        Core.HandleDrag()
+    end
+    
+    currentBlockRect = nextBlockRect
+    nextBlockRect = nil
+    postDrawQueue = {}
+end
 
-function Mantle.End() end
+function Mantle.End()
+    love.graphics.setScissor() -- End any scissor mode
+    for _, drawFunc in ipairs(postDrawQueue) do
+        drawFunc()
+    end
+end
+
+-- LOVE2D callbacks that will be registered
+function Mantle._love_draw()
+    if drawCallback then
+        Mantle.Begin()
+        drawCallback()
+        Mantle.End()
+    end
+end
+
+function Mantle._love_textinput(text)
+    -- Store text input for the Input widget
+    Mantle._textInputBuffer = (Mantle._textInputBuffer or "") .. text
+end
+
+-- Register the LOVE callbacks
+function Mantle._registerCallbacks()
+    love.draw = Mantle._love_draw
+    love.textinput = Mantle._love_textinput
+end
 
 -- ============================
 -- GRAPHICS WRAPPERS
@@ -161,38 +174,52 @@ end
 
 function Mantle.Clear(color)
     if not color then
-        rl.ClearBackground(rl.BLANK)
+        love.graphics.clear(0, 0, 0, 0)
     else
-        rl.ClearBackground(checkColor(color))
+        love.graphics.clear(color[1]/255, color[2]/255, color[3]/255, color[4]/255)
     end
 end
 
 function Mantle.Rect(x, y, w, h, color)
     local finalX, finalY = resolvePos(x, y)
-    rl.DrawRectangle(finalX, finalY, w, h, checkColor(color))
+    love.graphics.setColor(checkColor(color)[1]/255, checkColor(color)[2]/255, 
+                           checkColor(color)[3]/255, checkColor(color)[4]/255)
+    love.graphics.rectangle("fill", finalX, finalY, w, h)
+    love.graphics.setColor(1, 1, 1, 1)
     Layout.Advance(w, h)
 end
 
 function Mantle.Line(x1, y1, x2, y2, color, thick)
-    rl.DrawLineEx({ x = x1, y = y1 }, { x = x2, y = y2 }, thick or 1.0, checkColor(color))
+    love.graphics.setColor(checkColor(color)[1]/255, checkColor(color)[2]/255, 
+                           checkColor(color)[3]/255, checkColor(color)[4]/255)
+    love.graphics.setLineWidth(thick or 1.0)
+    love.graphics.line(x1, y1, x2, y2)
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setLineWidth(1)
 end
 
 function Mantle.Circle(x, y, radius, color)
-    rl.DrawCircle(math.floor(x), math.floor(y), radius, checkColor(color))
+    love.graphics.setColor(checkColor(color)[1]/255, checkColor(color)[2]/255, 
+                           checkColor(color)[3]/255, checkColor(color)[4]/255)
+    love.graphics.circle("fill", math.floor(x), math.floor(y), radius)
+    love.graphics.setColor(1, 1, 1, 1)
 end
 
 function Mantle.Text(text, size, color, x, y)
-    local font = Mantle.Theme.font or rl.GetFontDefault()
-    local fontSize = size or Mantle.Theme.fontSize
-    local spacing = 1.0
-
-    local dims = rl.MeasureTextEx(font, text, fontSize, spacing)
-    local w = dims.x
-    local h = dims.y
+    local font = Mantle.Theme.font or love.graphics.getFont()
+    local oldFont = love.graphics.getFont()
+    love.graphics.setFont(font)
+    
+    local w = font:getWidth(text)
+    local h = font:getHeight()
 
     local finalX, finalY = resolvePos(x, y)
 
-    rl.DrawTextEx(font, text, { x = finalX, y = finalY }, fontSize, spacing, checkColor(color))
+    love.graphics.setColor(checkColor(color)[1]/255, checkColor(color)[2]/255, 
+                           checkColor(color)[3]/255, checkColor(color)[4]/255)
+    love.graphics.print(text, finalX, finalY)
+    love.graphics.setColor(1, 1, 1, 1)
+    love.graphics.setFont(oldFont)
 
     Layout.Advance(w, h)
 end
@@ -211,8 +238,8 @@ function Mantle.Button(text, x, y, w, h, style)
 end
 
 function Mantle.Checkbox(text, checked, x, y, style)
-    local font = Mantle.Theme.font or rl.GetFontDefault()
-    local w = 20 + 8 + rl.MeasureTextEx(font, text, Mantle.Theme.fontSize, 1).x
+    local font = Mantle.Theme.font or love.graphics.getFont()
+    local w = 20 + 8 + font:getWidth(text)
     local h = 20
     local finalX, finalY = resolvePos(x, y)
     local result = checkbox_logic(Mantle, text, checked, finalX, finalY, style)
@@ -295,5 +322,8 @@ Mantle.DrawDashedLine = Core.DrawDashedLine
 Mantle.DrawWave = Core.DrawWave
 Mantle.DrawIcon = Core.DrawIcon
 Mantle.DrawRectStyle = Core.DrawRectStyle
+
+-- Register LOVE2D callbacks
+Mantle._registerCallbacks()
 
 return Mantle

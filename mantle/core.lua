@@ -1,8 +1,5 @@
 -- mantle/core.lua
-local rl = rl -- Local ref to global
-
 local Core = {}
-
 
 local dragState = {
     active  = false,
@@ -14,13 +11,19 @@ local dragState = {
 
 -- The function we designed for the weather widget footer
 function Core.DrawFooter(x, y, width, height, color, roundness)
-    -- 1. Draw the base (Rounded everywhere)
-    local rect = { x = x, y = y, width = width, height = height }
-    rl.DrawRectangleRounded(rect, roundness, 10, color)
-
-    -- 2. The Patch (Square off the top)
-    -- Draw a normal rectangle over the top 50%
-    rl.DrawRectangle(x, y, width, height / 2, color)
+    -- LÖVE2D doesn't have rounded rectangles by default
+    -- We'll draw a simple rectangle for now
+    -- For rounded corners, you'd need a custom implementation or library
+    
+    love.graphics.setColor(color[1]/255, color[2]/255, color[3]/255, color[4]/255)
+    
+    -- Draw the base rectangle
+    love.graphics.rectangle("fill", x, y, width, height)
+    
+    -- Draw a rectangle over the top 50% to square off the top
+    love.graphics.rectangle("fill", x, y, width, height / 2)
+    
+    love.graphics.setColor(1, 1, 1, 1) -- Reset color
 end
 
 function Core.DrawDashedLine(startX, startY, endX, endY, thick, color)
@@ -36,6 +39,9 @@ function Core.DrawDashedLine(startX, startY, endX, endY, thick, color)
     local cosA = math.cos(angle)
     local sinA = math.sin(angle)
 
+    love.graphics.setColor(color[1]/255, color[2]/255, color[3]/255, color[4]/255)
+    love.graphics.setLineWidth(thick)
+
     -- Draw segments
     for i = 0, length, (segmentLength + gapLength) do
         local px = startX + (cosA * i)
@@ -47,13 +53,19 @@ function Core.DrawDashedLine(startX, startY, endX, endY, thick, color)
         -- Don't draw past the end
         if i + segmentLength > length then break end
 
-        rl.DrawLineEx({ x = px, y = py }, { x = px2, y = py2 }, thick, color)
+        love.graphics.line(px, py, px2, py2)
     end
+    
+    love.graphics.setColor(1, 1, 1, 1) -- Reset color
+    love.graphics.setLineWidth(1) -- Reset line width
 end
 
 function Core.DrawWave(x, y, width, height, amplitude, frequency, offset, color)
     local midY = y + (height / 2)
     local step = 2 -- Lower = smoother, Higher = faster
+
+    love.graphics.setColor(color[1]/255, color[2]/255, color[3]/255, color[4]/255)
+    love.graphics.setLineWidth(2.0)
 
     for i = 0, width, step do
         -- Math Logic
@@ -61,27 +73,38 @@ function Core.DrawWave(x, y, width, height, amplitude, frequency, offset, color)
         local val2 = math.sin((i + step + offset) * frequency) * amplitude
 
         -- Draw line from point A to point B
-        rl.DrawLineEx(
-            { x = x + i, y = midY + val1 },
-            { x = x + i + step, y = midY + val2 },
-            2.0, -- Line thickness
-            color
+        love.graphics.line(
+            x + i, midY + val1,
+            x + i + step, midY + val2
         )
     end
+    
+    love.graphics.setColor(1, 1, 1, 1) -- Reset color
+    love.graphics.setLineWidth(1) -- Reset line width
 end
 
 function Core.DrawIcon(texture, centerX, centerY, scale, tint)
-    local w = texture.width * scale
-    local h = texture.height * scale
+    if not texture then return end
+    
+    local w = texture:getWidth() * scale
+    local h = texture:getHeight() * scale
+
+    -- Set tint color
+    if tint then
+        love.graphics.setColor(tint[1]/255, tint[2]/255, tint[3]/255, tint[4]/255)
+    else
+        love.graphics.setColor(1, 1, 1, 1)
+    end
 
     -- Draw centered
-    rl.DrawTextureEx(
+    love.graphics.draw(
         texture,
-        { x = centerX - (w / 2), y = centerY - (h / 2) },
+        centerX - (w / 2), centerY - (h / 2),
         0,
-        scale,
-        tint or rl.WHITE
+        scale, scale
     )
+    
+    love.graphics.setColor(1, 1, 1, 1) -- Reset color
 end
 
 -- DrawRectStyle: unified rectangle drawing with style support
@@ -96,66 +119,61 @@ function Core.DrawRectStyle(rect, style, themeDefaults)
     local gradient  = s.gradient -- e.g. { from = {...}, to = {...}, vertical = true }
 
     if gradient then
-        if gradient.vertical then
-            rl.DrawRectangleGradientV(rect.x, rect.y, rect.width, rect.height,
-                gradient.from, gradient.to)
-        else
-            rl.DrawRectangleGradientH(rect.x, rect.y, rect.width, rect.height,
-                gradient.from, gradient.to)
+        -- LÖVE2D doesn't have built-in gradient rectangles
+        -- We'll need to use a mesh or shader for this
+        -- For now, just use the 'from' color
+        if bg then
+            love.graphics.setColor(bg[1]/255, bg[2]/255, bg[3]/255, bg[4]/255)
+            love.graphics.rectangle("fill", rect.x, rect.y, rect.width, rect.height)
         end
     elseif bg then
-        if roundness > 0 then
-            rl.DrawRectangleRounded(rect, roundness, 12, bg)
-        else
-            rl.DrawRectangle(rect.x, rect.y, rect.width, rect.height, bg)
-        end
+        love.graphics.setColor(bg[1]/255, bg[2]/255, bg[3]/255, bg[4]/255)
+        love.graphics.rectangle("fill", rect.x, rect.y, rect.width, rect.height)
     end
 
     if border and borderW > 0 then
-        if roundness > 0 then
-            rl.DrawRectangleRoundedLines(rect, roundness, 12, borderW, border)
-        else
-            rl.DrawRectangleLinesEx(rect, borderW, border)
-        end
+        love.graphics.setColor(border[1]/255, border[2]/255, border[3]/255, border[4]/255)
+        love.graphics.setLineWidth(borderW)
+        love.graphics.rectangle("line", rect.x, rect.y, rect.width, rect.height)
     end
+    
+    love.graphics.setColor(1, 1, 1, 1) -- Reset color
+    love.graphics.setLineWidth(1) -- Reset line width
 end
 
 function Core.HandleDrag()
     -- 1. Start Dragging
-    if rl.IsMouseButtonPressed(0) then
+    if love.mouse.isDown(1) and not dragState.active then
         dragState.active = true
 
         -- Use window-relative mouse position
-        local mouse = rl.GetMousePosition()
-        dragState.mouseX = mouse.x
-        dragState.mouseY = mouse.y
+        local mx, my = love.mouse.getPosition()
+        dragState.mouseX = mx
+        dragState.mouseY = my
 
         -- Store initial window position
-        local winPos = rl.GetWindowPosition()
-        dragState.winX = winPos.x
-        dragState.winY = winPos.y
+        local wx, wy = love.window.getPosition()
+        dragState.winX = wx
+        dragState.winY = wy
     end
 
     -- 2. Stop Dragging
-    if rl.IsMouseButtonReleased(0) then
+    if not love.mouse.isDown(1) and dragState.active then
         dragState.active = false
     end
 
     -- 3. Update Position (only when dragging)
-    if dragState.active and rl.IsMouseButtonDown(0) then
-        -- Get current window position
-        local winPos = rl.GetWindowPosition()
-        
+    if dragState.active and love.mouse.isDown(1) then
         -- Get current mouse position (window-relative)
-        local mouse = rl.GetMousePosition()
+        local mx, my = love.mouse.getPosition()
 
         -- Calculate where the window should be:
-        -- Current window position + mouse offset from grab point
-        local newX = winPos.x + mouse.x - dragState.mouseX
-        local newY = winPos.y + mouse.y - dragState.mouseY
+        -- Initial window position + mouse offset from grab point
+        local newX = dragState.winX + mx - dragState.mouseX
+        local newY = dragState.winY + my - dragState.mouseY
 
         -- Move window to new position
-        rl.SetWindowPosition(math.floor(newX), math.floor(newY))
+        love.window.setPosition(math.floor(newX), math.floor(newY))
     end
 end
 

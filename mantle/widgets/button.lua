@@ -1,5 +1,3 @@
-local rl = rl
-
 -- Merge local style with theme defaults
 local function resolveStyle(Mantle, style)
     local theme = Mantle.Theme
@@ -27,10 +25,16 @@ return function(Mantle, text, x, y, width, height, style)
 
     local s = resolveStyle(Mantle, style)
 
-    local mouseX = rl.GetMouseX()
-    local mouseY = rl.GetMouseY()
-    local isDown = rl.IsMouseButtonDown(0)
-    local isReleased = rl.IsMouseButtonReleased(0)
+    local mouseX, mouseY = love.mouse.getPosition()
+    local isDown = love.mouse.isDown(1)
+    
+    -- Track button releases
+    local wasPressed = Mantle._buttonPressed or {}
+    local buttonId = tostring(x) .. "_" .. tostring(y)
+    local wasDown = wasPressed[buttonId] or false
+    local isReleased = wasDown and not isDown
+    wasPressed[buttonId] = isDown
+    Mantle._buttonPressed = wasPressed
 
     local isBlocked = Mantle.IsMouseBlocked()
 
@@ -48,37 +52,30 @@ return function(Mantle, text, x, y, width, height, style)
         end
     end
 
-    local rect = { x = x, y = y, width = width, height = height }
+    love.graphics.setColor(color[1]/255, color[2]/255, color[3]/255, color[4]/255)
+    love.graphics.rectangle("fill", x, y, width, height)
 
-    if s.borderRadius > 0 then
-        rl.DrawRectangleRounded(rect, s.borderRadius, 12, color)
-        if s.borderColor then
-            rl.DrawRectangleRoundedLines(rect, s.borderRadius, 12, 1, s.borderColor)
-        end
-    else
-        rl.DrawRectangle(x, y, width, height, color)
-        if s.borderColor then
-            rl.DrawRectangleLines(x, y, width, height, s.borderColor)
-        end
+    if s.borderColor then
+        love.graphics.setColor(s.borderColor[1]/255, s.borderColor[2]/255, s.borderColor[3]/255, s.borderColor[4]/255)
+        love.graphics.setLineWidth(1)
+        love.graphics.rectangle("line", x, y, width, height)
     end
 
-    local font = Mantle.Theme.font or rl.GetFontDefault()
-    local fontSize = Mantle.Theme.fontSize
-    local spacing = 1.0
+    local font = Mantle.Theme.font or love.graphics.getFont()
+    local oldFont = love.graphics.getFont()
+    love.graphics.setFont(font)
+    
+    local txtWidth = font:getWidth(text)
+    local txtHeight = font:getHeight()
 
-    local dims = rl.MeasureTextEx(font, text, fontSize, spacing)
+    local txtX = x + (width - txtWidth) / 2
+    local txtY = y + (height - txtHeight) / 2
 
-    local txtX = x + (width - dims.x) / 2
-    local txtY = y + (height - dims.y) / 2
-
-    rl.DrawTextEx(
-        font,
-        text,
-        { x = math.floor(txtX), y = math.floor(txtY) },
-        fontSize,
-        spacing,
-        s.textColor
-    )
+    love.graphics.setColor(s.textColor[1]/255, s.textColor[2]/255, s.textColor[3]/255, s.textColor[4]/255)
+    love.graphics.print(text, math.floor(txtX), math.floor(txtY))
+    
+    love.graphics.setFont(oldFont)
+    love.graphics.setColor(1, 1, 1, 1) -- Reset color
 
     return isHovered and isReleased
 end

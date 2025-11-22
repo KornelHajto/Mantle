@@ -1,2 +1,25 @@
+# Old Raylib executables (no longer needed)
 raylua_s.exe
 raylua_s
+start.bat
+
+# LÖVE2D build artifacts
+*.love
+
+# OS-specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Temporary files
+*.tmp
+*.bak
+*.log
+
