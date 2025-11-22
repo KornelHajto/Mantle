@@ -142,38 +142,39 @@ function Core.DrawRectStyle(rect, style, themeDefaults)
 end
 
 function Core.HandleDrag()
-    -- 1. Start Dragging
-    if love.mouse.isDown(1) and not dragState.active then
+    -- In LÖVE2D, we need a simpler approach
+    -- Track if we just started dragging this frame
+    local isPressed = love.mouse.isDown(1)
+    
+    if isPressed and not dragState.active then
+        -- Just started dragging
         dragState.active = true
-
-        -- Use window-relative mouse position
+        
+        -- Get the current mouse position relative to the window
         local mx, my = love.mouse.getPosition()
-        dragState.mouseX = mx
-        dragState.mouseY = my
-
-        -- Store initial window position
-        local wx, wy = love.window.getPosition()
-        dragState.winX = wx
-        dragState.winY = wy
-    end
-
-    -- 2. Stop Dragging
-    if not love.mouse.isDown(1) and dragState.active then
+        
+        -- Store the offset from top-left corner of window
+        dragState.offsetX = mx
+        dragState.offsetY = my
+    elseif not isPressed then
+        -- Released mouse button
         dragState.active = false
     end
-
-    -- 3. Update Position (only when dragging)
-    if dragState.active and love.mouse.isDown(1) then
-        -- Get current mouse position (window-relative)
-        local mx, my = love.mouse.getPosition()
-
-        -- Calculate where the window should be:
-        -- Initial window position + mouse offset from grab point
-        local newX = dragState.winX + mx - dragState.mouseX
-        local newY = dragState.winY + my - dragState.mouseY
-
-        -- Move window to new position
-        love.window.setPosition(math.floor(newX), math.floor(newY))
+    
+    if dragState.active then
+        -- Get screen mouse position (absolute)
+        local screenX, screenY = love.mouse.getPosition()
+        local wx, wy = love.window.getPosition()
+        
+        -- Calculate absolute mouse position
+        local absoluteX = wx + screenX
+        local absoluteY = wy + screenY
+        
+        -- Set window position so the grab point stays under the cursor
+        love.window.setPosition(
+            math.floor(absoluteX - dragState.offsetX),
+            math.floor(absoluteY - dragState.offsetY)
+        )
     end
 end
 

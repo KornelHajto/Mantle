@@ -51,15 +51,13 @@ end
 function Mantle.Run(callback)
     drawCallback = callback
     
-    -- Update conf.lua values
+    -- Update window with configured settings
     love.window.setTitle(config.title)
-    if not love.window.isOpen() then
-        love.window.setMode(config.width, config.height, {
-            borderless = config.transparent,
-            resizable = false,
-            vsync = 1
-        })
-    end
+    love.window.setMode(config.width, config.height, {
+        borderless = config.transparent,
+        resizable = false,
+        vsync = 1
+    })
 end
 
 -- ============================
@@ -72,9 +70,9 @@ end
 
 function Mantle.IsMouseBlocked()
     if not currentBlockRect then return false end
-    local m = rl.GetMousePosition()
-    return (m.x >= currentBlockRect.x and m.x <= currentBlockRect.x + currentBlockRect.w and
-        m.y >= currentBlockRect.y and m.y <= currentBlockRect.y + currentBlockRect.h)
+    local mx, my = love.mouse.getPosition()
+    return (mx >= currentBlockRect.x and mx <= currentBlockRect.x + currentBlockRect.w and
+        my >= currentBlockRect.y and my <= currentBlockRect.y + currentBlockRect.h)
 end
 
 -- ============================
@@ -323,7 +321,41 @@ Mantle.DrawWave = Core.DrawWave
 Mantle.DrawIcon = Core.DrawIcon
 Mantle.DrawRectStyle = Core.DrawRectStyle
 
--- Register LOVE2D callbacks
-Mantle._registerCallbacks()
+-- ============================
+-- LOVE2D CALLBACKS
+-- ============================
+
+function love.draw()
+    if not drawCallback then return end
+    
+    if config.draggable and Core.HandleDrag then
+        Core.HandleDrag()
+    end
+
+    Mantle.Begin()
+
+    currentBlockRect = nextBlockRect
+    nextBlockRect = nil
+    postDrawQueue = {}
+
+    -- Call the user's draw function
+    drawCallback()
+
+    -- Draw post-draw queue (layers)
+    for _, drawFunc in ipairs(postDrawQueue) do
+        drawFunc()
+    end
+
+    Mantle.End()
+end
+
+function love.textinput(text)
+    -- Store text input for the Input widget
+    Mantle._textInputBuffer = (Mantle._textInputBuffer or "") .. text
+end
+
+function love.update(dt)
+    -- Update logic can go here if needed
+end
 
 return Mantle
