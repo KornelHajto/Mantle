@@ -2,7 +2,8 @@
 -- To run a demo, require it here instead of the example below
 
 -- Require the demo you want to run:
-require("demo.weather")
+require("demo.graph")
+-- require("demo.weather")
 
 -- Or use the simple example below:
 --[[

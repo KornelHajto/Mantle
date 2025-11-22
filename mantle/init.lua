@@ -204,7 +204,15 @@ function Mantle.Circle(x, y, radius, color)
 end
 
 function Mantle.Text(text, size, color, x, y)
-    local font = Mantle.Theme.font or love.graphics.getFont()
+    -- Create or get a font at the requested size
+    local font
+    if size and size ~= Mantle.Theme.fontSize then
+        -- Use default font at the requested size
+        font = love.graphics.newFont(size)
+    else
+        font = Mantle.Theme.font or love.graphics.getFont()
+    end
+    
     local oldFont = love.graphics.getFont()
     love.graphics.setFont(font)
     

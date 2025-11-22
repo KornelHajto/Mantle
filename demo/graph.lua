@@ -1,12 +1,11 @@
 local Mantle = require("mantle.init")
-local rl = rl -- We need this for GetFrameTime (Delta Time)
 
 -- 1. SETUP
 Mantle.Window({
     width = 600,
     height = 350,
     title = "Scientific Graph",
-    transparent = true,
+    transparent = false,
     draggable = true,
     targetFPS = 60 -- Lock it to 60 to prevent screen tearing
 })
@@ -25,11 +24,12 @@ local colGrid       = { 0, 0, 0, 40 }
 local colText       = { 0, 0, 0, 180 }
 local colWave       = { 20, 20, 20, 200 }
 local colDot        = { 0, 0, 0, 50 }
+local colRedDot     = { 231, 76, 60, 255 } -- Red color for the tracking dot
 
 -- 4. THE LOOP
 Mantle.Run(function()
     -- A. Logic (Use Delta Time for smooth movement)
-    local dt = rl.GetFrameTime()
+    local dt = love.timer.getDelta()
     timeOffset = timeOffset + (2.0 * dt) -- Speed = 2.0 units per second
 
     -- B. Draw Background
@@ -46,7 +46,7 @@ Mantle.Run(function()
         if i ~= 0 then
             local x = math.floor(originX + (i * scale)) -- SNAP TO INTEGER
             Mantle.Line(x, 0, x, 350, colGrid)
-            Mantle.Text(tostring(i), 10, colText, x + 2, originY + 2)
+            Mantle.Text(tostring(i), 20, colText, x + 2, originY + 2)
         end
     end
 
@@ -55,7 +55,7 @@ Mantle.Run(function()
         if i ~= 0 then
             local y = math.floor(originY - (i * scale)) -- SNAP TO INTEGER
             Mantle.Line(0, y, 600, y, colGrid)
-            Mantle.Text(tostring(i), 10, colText, originX + 2, y + 2)
+            Mantle.Text(tostring(i), 20, colText, originX + 2, y + 2)
         end
     end
 
@@ -86,11 +86,11 @@ Mantle.Run(function()
     local dotMathY = math.sin(cursorMathX + timeOffset)
     local dotScreenY = math.floor(originY - (dotMathY * scale))
 
-    Mantle.Circle(cursorScreenX, dotScreenY, 5, { 0, 0, 0, 255 })
+    Mantle.Circle(cursorScreenX, dotScreenY, 5, colRedDot)
 
     -- Value Text
     local valueStr = string.format("%.2f", dotMathY)
-    Mantle.Text(valueStr, 60, { 0, 0, 0, 100 }, 50, 40)
+    Mantle.Text(valueStr, 40, { 0, 0, 0, 100 }, 30, 20)
 
     -- Decoration
     Mantle.Circle(550, 20, 6, colDot)
